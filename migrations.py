@@ -15,11 +15,13 @@ class MakeMigration(DBStatus):
         self.fields = fields
         self.action_type = action_type
     
-    def manager(self):
+    def manager(self, *args):
         if self.action_type == 'create':
             return self.create_table()
         elif self.action_type == 'delete':
             return self.delete_table()
+        elif self.action_type == 'update':
+            return self.update_table(self.table_name, self.fields, args[0])
         else:
             logger.error('Invalid action type')
 
@@ -40,11 +42,18 @@ class MakeMigration(DBStatus):
             logger.info(f'Table {self.table_name} already exists')
             return False
     
-    def update_table(self, table_name, fields):
-        pass
-        
-    
-        
+    def update_table(self, table_name, column, action_type):
+        if action_type == 'add':
+            new_column_name = list(column.keys())[0]
+            new_column_definition = list(column.values())[0]
+            return f'ALTER TABLE {table_name} ADD COLUMN {new_column_name} {new_column_definition};'
+        elif action_type == 'remove':
+            return f'ALTER TABLE {table_name} DROP COLUMN {column} ;'
+        else:
+            self.close()
+            logger.info(f'Action type "{action_type}" is not valid')
+            return False
+            
     def get_fields(self):
         fields = []
         for key, value in self.fields.items():

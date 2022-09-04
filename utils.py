@@ -24,8 +24,9 @@ def get_table_columns(table_name):
     return DBStatus(DB_SETTINGS).get_table_columns(table_name)
 
 if __name__ == '__main__':
-    print(get_current_models())
+
     print(get_db_tables())
-    print(get_table_columns('child'))
-    
+    for table in get_db_tables():
+        print(get_table_columns(table))
+
     

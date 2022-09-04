@@ -1,6 +1,0 @@
-DROP TABLE IF EXISTS book;
- ############## 
-DROP TABLE IF EXISTS child;
- ############## 
-DROP TABLE IF EXISTS student;
- ############## 
