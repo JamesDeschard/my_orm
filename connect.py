@@ -1,16 +1,9 @@
 import psycopg2
 import logging
 
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('CONNECT')
-
-DB_SETTINGS = {
-    'host':"localhost", 
-    'dbname': 'orm', 
-    'user':'postgres',
-    'password':'jiimidu77', 
-    'port':'5432'
-}
 
 
 class DBConnectionMixin:
@@ -24,12 +17,24 @@ class DBConnectionMixin:
             self.connection = psycopg2.connect(**self.database_settings)
             self.cursor = self.connection.cursor()
             self.connection.autocommit = True
-            logger.info('Connection successful')
             
         except Exception as e:
             logger.error(e)
         
         return self.cursor
+    
+    def close(self):
+        if self.cursor is not None:
+            self.cursor.close()
+            
+        if self.connection is not None:
+            self.connection.close()
+
+
+class DBStatus(DBConnectionMixin):
+    
+    def __init__(self, database_settings) -> None:
+        super().__init__(database_settings)
     
     def table_exists(self, table_name):
         connection = self.connect()
@@ -43,12 +48,24 @@ class DBConnectionMixin:
         
         return connection.fetchone()
     
-    def close(self):
-        if self.cursor is not None:
-            self.cursor.close()
-            logger.info('Cursor closed')
-            
-        if self.connection is not None:
-            self.connection.close()
-            logger.info('Connection closed')
+    def get_all_tables(self):
+        self.connect()
+        self.cursor.execute(""" SELECT table_name FROM information_schema.tables
+                                WHERE table_schema = 'public'   """)
+        
+        tables = list(map(lambda x: x[0], self.cursor.fetchall()))
+        self.close()
+        return tables
+    
+    def get_table_columns(self, table_name):
+        self.connect()
+        self.cursor.execute(f""" SELECT column_name FROM information_schema.columns
+                                WHERE table_name = '{table_name}' """)
+        
+        columns = list(map(lambda x: x[0], self.cursor.fetchall()))
+        self.close()
+        return columns
+
+
+
         

@@ -1,6 +1,7 @@
 import logging
 
-from connect import DBConnectionMixin, DB_SETTINGS
+from connect import DBConnectionMixin
+from settings import DB_SETTINGS
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('MIGRATE')
@@ -15,8 +16,5 @@ class Migrate(DBConnectionMixin):
         if self.query:
             connection = self.connect()
             connection.execute(self.query)
-            logger.info('Migration successfully applied')
             self.close()
             
-        else:
-            logger.info('No migrations to apply!')

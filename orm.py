@@ -1,7 +1,5 @@
 import logging
 
-from migrations import MakeMigration   
-from migrate import Migrate
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('ORM')
@@ -32,6 +30,7 @@ class MetaModel(type):
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
         new_class.objects = BaseManager(new_class)
+        new_class.table_name = name.lower()
         
         field_list = {}
         
@@ -46,17 +45,11 @@ class MetaModel(type):
 
 
 class BaseModel(metaclass=MetaModel):
-    def __init__(self) -> None:
-        self.table_name = self.__class__.__name__.lower()
-        
-    def make_migration(self):
-        return MakeMigration(self.table_name, self.fields).create_table()
     
-    def execute_migration(self):
-        return Migrate(self.make_migration()).execute()
+    def get_instance_attributes(self):
+        for attribute, value in self.__dict__.items():
+            print(attribute, '=', value)
+
     
-    def migrate(self):
-        # Connect to db and create table
-        pass
 
 

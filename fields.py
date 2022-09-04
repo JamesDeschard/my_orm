@@ -9,3 +9,4 @@ class CharField:
 class IntegerField:
     def create_migration(self) -> str:
         return f'numeric (10, 2)'
+    
