@@ -1,8 +1,8 @@
 import importlib
 import inspect
 
-from settings import DB_SETTINGS
 from connect import DBStatus
+from settings import DB_SETTINGS
 
 
 def get_current_models():

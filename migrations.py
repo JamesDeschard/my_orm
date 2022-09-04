@@ -28,19 +28,10 @@ class MakeMigration(DBStatus):
     def delete_table(self):
         if self.table_exists(self.table_name)[0]:
             return f'DROP TABLE IF EXISTS {self.table_name};'
-        else:
-            self.close()
-            logger.info(f'Table {self.table_name} does not exist')
-            return False
     
     def create_table(self):
         if not self.table_exists(self.table_name)[0]:
             return f'CREATE TABLE {self.table_name} (id SERIAL PRIMARY KEY,{",".join(self.get_fields())});'
-        
-        else:
-            self.close()
-            logger.info(f'Table {self.table_name} already exists')
-            return False
     
     def update_table(self, table_name, column, action_type):
         if action_type == 'add':
@@ -49,10 +40,6 @@ class MakeMigration(DBStatus):
             return f'ALTER TABLE {table_name} ADD COLUMN {new_column_name} {new_column_definition};'
         elif action_type == 'remove':
             return f'ALTER TABLE {table_name} DROP COLUMN {column} ;'
-        else:
-            self.close()
-            logger.info(f'Action type "{action_type}" is not valid')
-            return False
             
     def get_fields(self):
         fields = []

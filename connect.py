@@ -1,6 +1,6 @@
-import psycopg2
 import logging
 
+import psycopg2
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('CONNECT')
@@ -65,6 +65,8 @@ class DBStatus(DBConnectionMixin):
         columns = list(map(lambda x: x[0], self.cursor.fetchall()))
         self.close()
         return columns
+
+
 
 
 

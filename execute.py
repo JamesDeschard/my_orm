@@ -1,16 +1,13 @@
-import os
+import glob
 import logging
+import os
 import sys
 import time
-import glob
 
-from itertools import starmap
-
+from migrate import ExecuteQuery
+from migrations import MakeMigration
 from settings import BASE_DIR
 from utils import get_current_models, get_db_tables, get_table_columns
-from migrations import MakeMigration
-from migrate import Migrate
-
 
 BASE_MIGRATION_PATH = os.path.join(BASE_DIR, 'migrations')
 QUERY_SEPARATOR = '\n ############## \n'
@@ -121,7 +118,7 @@ class ExecuteMigrations:
         
             queries = query.split(QUERY_SEPARATOR)
             for query in queries:
-                Migrate(query).execute()
+                ExecuteQuery(query).execute()
     
 
 if __name__ == '__main__':
