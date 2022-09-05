@@ -40,7 +40,7 @@ class BaseManager:
     
     def read(self, **kwargs):
         if self.check_fields(kwargs):
-            query = SqlQueries().get_all_columns(self.get_table_name(), **kwargs)
+            query = SqlQueries().get(self.get_table_name(), **kwargs)
             if query:
                 return QuerySet(query, self.model_class.fields.keys(), self.model_class).create()
             else:
@@ -49,7 +49,7 @@ class BaseManager:
     
     def update(self, column_id, **kwargs):
         if self.check_fields(kwargs):
-            SqlQueries().update(self.get_table_name(), column_id, kwargs)
+            SqlQueries().update(self.get_table_name(), column_id, **kwargs)
             logger.info(f'{self.model_class.__name__.capitalize()} updated')
             
             QuerySet(

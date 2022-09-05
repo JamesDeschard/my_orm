@@ -41,12 +41,14 @@ if __name__ == '__main__':
     # for book in Book.objects.all():
     #     print(book.title, book.id)
         
-    # Test Update
+    # # Test Update
     
+    a = Book(title="The war of the worlds", author="H.G. Wells")
+    a.save()
     test = Book.objects.read(title="The war of the worlds", author="H.G. Wells")
     print(test)
     test.update(title="Updated Title", author="Updated Author")
-    test = Book.objects.read("Updated Title", author="Updated Author")
+    test = Book.objects.read(title="Updated Title", author="Updated Author")
     print(test.title, test.author)
     
     for book in Book.objects.all():
