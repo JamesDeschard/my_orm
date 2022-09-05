@@ -1,6 +1,6 @@
 import logging
 
-from queries import SqlQueries, QuerySet
+from queries import ModelManagerQueries, QuerySet
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -26,8 +26,8 @@ class BaseManager:
         
         if self.check_fields(kwargs):
         
-            if not self.read(**kwargs):
-                SqlQueries().create(
+            if not self.get(**kwargs):
+                ModelManagerQueries().create(
                     self.get_table_name(), 
                     ', '.join(kwargs.keys()), 
                     ', '.join([f"'{value}'" for value in kwargs.values()])
@@ -38,9 +38,9 @@ class BaseManager:
             else:
                 logger.info(f'Object {self.model_class.__name__} with desired field values already exists')
     
-    def read(self, **kwargs):
+    def get(self, **kwargs):
         if self.check_fields(kwargs):
-            query = SqlQueries().get(self.get_table_name(), **kwargs)
+            query = ModelManagerQueries().get(self.get_table_name(), **kwargs)
             if query:
                 return QuerySet(query, self.model_class.fields.keys(), self.model_class).create()
             else:
@@ -49,7 +49,7 @@ class BaseManager:
     
     def update(self, column_id, **kwargs):
         if self.check_fields(kwargs):
-            SqlQueries().update(self.get_table_name(), column_id, **kwargs)
+            ModelManagerQueries().update(self.get_table_name(), column_id, **kwargs)
             logger.info(f'{self.model_class.__name__.capitalize()} updated')
             
             QuerySet(
@@ -62,18 +62,16 @@ class BaseManager:
             return True
   
     def delete(self, **kwargs):
-        SqlQueries().delete(self.get_table_name(), **kwargs)
+        ModelManagerQueries().delete(self.get_table_name(), **kwargs)
         logger.info(f'{self.model_class.__name__.capitalize()} deleted')
         return True
 
     def all(self) -> None:
-        query = SqlQueries().get_all_columns(self.get_table_name())
+        query = ModelManagerQueries().get_all_columns(self.get_table_name())
         queryset = QuerySet(query, self.model_class.fields.keys(), self.model_class).create()  
         return queryset
 
-           
-# Model Class
-    
+
 class MetaModel(type): 
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)

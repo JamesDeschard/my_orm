@@ -24,13 +24,6 @@ def get_table_columns(table_name):
     return DBStatus(DB_SETTINGS).get_table_columns(table_name)
 
 
-def get_attribute_fields(model):
-    fields = dict()
-    for key, value in model.__dict__.items():
-        if not key.startswith('__') and not key in ['table_name', 'fields', 'objects']:
-            fields[key] = value
-    return fields
-
 if __name__ == '__main__':
 
     for table in get_db_tables():

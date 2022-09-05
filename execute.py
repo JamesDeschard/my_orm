@@ -9,6 +9,7 @@ from migrations import MakeMigration
 from settings import BASE_DIR
 from utils import get_current_models, get_db_tables, get_table_columns
 
+
 BASE_MIGRATION_PATH = os.path.join(BASE_DIR, 'migrations')
 QUERY_SEPARATOR = '\n ############## \n'
 

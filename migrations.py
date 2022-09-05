@@ -1,7 +1,9 @@
 
 import logging
 
+
 from connect import DBStatus
+from queries import MigrationQueries
 from settings import DB_SETTINGS
 
 logging.basicConfig(level=logging.DEBUG)
@@ -27,19 +29,19 @@ class MakeMigration(DBStatus):
 
     def delete_table(self):
         if self.table_exists(self.table_name)[0]:
-            return f'DROP TABLE IF EXISTS {self.table_name};'
+            return MigrationQueries().drop_table(self.table_name)
     
     def create_table(self):
         if not self.table_exists(self.table_name)[0]:
-            return f'CREATE TABLE {self.table_name} (id SERIAL PRIMARY KEY,{",".join(self.get_fields())});'
+            return MigrationQueries().create_table(self.table_name, self.get_fields())
     
     def update_table(self, table_name, column, action_type):
         if action_type == 'add':
             new_column_name = list(column.keys())[0]
             new_column_definition = list(column.values())[0]
-            return f'ALTER TABLE {table_name} ADD COLUMN {new_column_name} {new_column_definition};'
+            return MigrationQueries().add_column(table_name, new_column_name, new_column_definition)
         elif action_type == 'remove':
-            return f'ALTER TABLE {table_name} DROP COLUMN {column} ;'
+            return MigrationQueries().remove_column(table_name, column)
             
     def get_fields(self):
         fields = []

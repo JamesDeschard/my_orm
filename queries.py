@@ -1,6 +1,21 @@
 from migrate import ExecuteQuery
 
-class SqlQueries:
+
+class MigrationQueries:
+    def create_table(self, table_name, fields):
+        return f'CREATE TABLE {table_name} (id SERIAL PRIMARY KEY,{",".join(fields)});'
+    
+    def add_column(self, table_name, column_name, column_definition):
+        return f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition};'
+    
+    def remove_column(self, table_name, column_name):
+        return f'ALTER TABLE {table_name} DROP COLUMN {column_name} ;'
+        
+    def drop_table(self, table_name):
+        return f'DROP TABLE IF EXISTS {table_name};'
+    
+
+class ModelManagerQueries:
     def add_query_search_names_and_values(self, query, update=False, **kwargs):
         for index, (key, value) in enumerate(kwargs.items()):
             query += f"{key} = '{value}'"
@@ -56,15 +71,4 @@ class QuerySet:
         if len(self.queryset) == 1:
             return self.queryset[0]
         return self.queryset
-    
-    # def __iter__(self):
-    #     return self
-    
-    # def __next__(self):
-    #     if self.current < len(self.db_query.queryset):
-    #         result = self.queryset[self.current]
-    #         self.current += 1
-    #         return result
-    #     else:
-    #         raise StopIteration
     

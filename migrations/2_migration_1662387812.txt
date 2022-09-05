@@ -1,2 +1,0 @@
-CREATE TABLE book (id SERIAL PRIMARY KEY,title varchar (255),author varchar (255));
- ############## 
