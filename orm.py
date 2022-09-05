@@ -1,12 +1,13 @@
 import logging
 
-from migrate import ExecuteQuery
+from queries import SqlQueries, QuerySet
+
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('ORM')
-        
-        
-class BaseManager:
-    
+
+
+class BaseManager:  
     def __init__(self, model_class) -> None:
         self.model_class = model_class
     
@@ -17,66 +18,66 @@ class BaseManager:
         for field in fields.keys():
             if field not in self.model_class.fields.keys():
                 raise Exception(f'Field {field} does not exist in {self.model_class.__name__}')
-        else:
-            return True
-    
-    def add_query_search_names_and_values(self, query, **kwargs):
-        for index, (key, value) in enumerate(kwargs.items()):
-            query += f"{key} = '{value}'"
-            if index != len(kwargs.items()) - 1:
-                query += " AND "
-        return query
-    
-    def create(self, **kwargs):
+        return True
+            
+    def create(self, **kwargs): 
         if len(kwargs.keys()) < len(self.model_class.fields.keys()):
                 raise Exception(f'Please provide information for all fields for {self.model_class.__name__}')
+        
         if self.check_fields(kwargs):
+        
             if not self.read(**kwargs):
-                field_names = ', '.join(kwargs.keys())
-                field_values = ', '.join([f"'{value}'" for value in kwargs.values()])
-                query = f"INSERT INTO {self.get_table_name()} ({field_names}) VALUES ({field_values});"
-                query = ExecuteQuery(query).execute()
-                logger.info('Object created')
+                SqlQueries().create(
+                    self.get_table_name(), 
+                    ', '.join(kwargs.keys()), 
+                    ', '.join([f"'{value}'" for value in kwargs.values()])
+                )
+                
+                logger.info(f'{self.model_class.__name__.capitalize()} created')
                 return True
+            else:
+                logger.info(f'Object {self.model_class.__name__} with desired field values already exists')
     
     def read(self, **kwargs):
         if self.check_fields(kwargs):
-            query = f"SELECT * FROM {self.get_table_name()} WHERE "
-            query = self.add_query_search_names_and_values(query, **kwargs)
-            query = ExecuteQuery(query).execute(read=True)
-            if not query:
-                logger.info('Object does not exist')
-                
-            query_object = zip(['id'] + list(self.model_class.fields.keys()), query[0])
-            query_object = self.model_class(**dict(query_object))
-            return query_object
+            query = SqlQueries().get_all_columns(self.get_table_name(), **kwargs)
+            if query:
+                return QuerySet(query, self.model_class.fields.keys(), self.model_class).create()
+            else:
+                logger.info(f'No {self.model_class.__name__} found')
+                return False
     
-    def update(self, **kwargs) -> None:
+    def update(self, column_id, **kwargs):
         if self.check_fields(kwargs):
-            pass
-            # query = f"UPDATE {self.get_table_name()} SET "
-            # query = self.add_query_search_names_and_values(query, **kwargs)
-            # query = ExecuteQuery(query).execute()
-            # logger.info('Object updated')
-            # return True
-    
-    def delete(self, **kwargs)-> None:
-        if self.check_fields(kwargs):
-            query = f"DELETE FROM {self.get_table_name()} WHERE "
-            query = self.add_query_search_names_and_values(query, **kwargs)
-            query = ExecuteQuery(query).execute()
-            logger.info('Object deleted')
+            SqlQueries().update(self.get_table_name(), column_id, kwargs)
+            logger.info(f'{self.model_class.__name__.capitalize()} updated')
+            
+            QuerySet(
+                [(column_id, *kwargs.values())], 
+                self.model_class.fields.keys(),
+                self.model_class
+            ).create()
+            
+            logger.info('Object updated')
             return True
-    
+  
+    def delete(self, **kwargs):
+        SqlQueries().delete(self.get_table_name(), **kwargs)
+        logger.info(f'{self.model_class.__name__.capitalize()} deleted')
+        return True
+
     def all(self) -> None:
-        return 'All method called'
-        
+        query = SqlQueries().get_all_columns(self.get_table_name())
+        queryset = QuerySet(query, self.model_class.fields.keys(), self.model_class).create()  
+        return queryset
+
            
 # Model Class
     
 class MetaModel(type): 
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
+
         new_class.objects = BaseManager(new_class)
         new_class.table_name = name.lower()
         
@@ -96,10 +97,21 @@ class BaseModel(metaclass=MetaModel):
     def __init__(self, **kwargs) -> None:
         for key, value in kwargs.items():
             setattr(self, key, value)
+        
+        self._attrs = dict(self.__dict__.items())
     
     def __repr__(self):
-        attrs_format = ", ".join([f'{field}={value}' for field, value in self.__dict__.items()])
+        attrs_format = ", ".join([f'{field}={value}' for field, value in self._attrs.items()])
         return f"<{self.__class__.__name__}: [{attrs_format}]>"
+    
+    def save(self) -> None:
+        return self.objects.create(**self._attrs)
+      
+    def delete(self) -> None:
+        return self.objects.delete(**self._attrs)
+    
+    def update(self, **kwargs) -> None:
+        return self.objects.update(self.id, **kwargs)
     
 
 
