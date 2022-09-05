@@ -5,9 +5,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 DB_SETTINGS = {
     'host':"localhost", 
-    'dbname': 'orm', 
-    'user':'postgres',
-    'password':'jiimidu77', 
+    'dbname': '#####', 
+    'user':'#####',
+    'password':'#####', 
     'port':'5432'
 }
 
