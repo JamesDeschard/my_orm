@@ -46,5 +46,6 @@ class MakeMigration(DBStatus):
     def get_fields(self):
         fields = []
         for key, value in self.fields.items():
-            fields.append(f'{key} {value.create_migration()}')
+            if key != 'id':
+                fields.append(f'{key} {value.create_migration()}')
         return fields

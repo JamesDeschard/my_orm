@@ -1,0 +1,6 @@
+CREATE TABLE author (id SERIAL PRIMARY KEY,name VARCHAR (255),surname VARCHAR (255));
+ ############## 
+CREATE TABLE book (id SERIAL PRIMARY KEY,title VARCHAR (255),author INTEGER REFERENCES author (id) ON DELETE CASCADE);
+ ############## 
+DROP TABLE IF EXISTS person CASCADE;
+ ############## 

@@ -1,10 +1,5 @@
-import logging
-
 from queries import ModelManagerQueries, QuerySet
-
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('ORM')
+from migrate import ExecuteQuery
 
 
 class BaseManager:  
@@ -14,69 +9,66 @@ class BaseManager:
     def get_table_name(self):
         return self.model_class.table_name
     
+    def get_model_class_field_names(self):
+        return self.model_class.fields.keys()
+    
     def check_fields(self, fields):
         for field in fields.keys():
-            if field not in self.model_class.fields.keys():
+            if field not in self.get_model_class_field_names():
                 raise Exception(f'Field {field} does not exist in {self.model_class.__name__}')
         return True
+    
+    def check_for_foreign_key(self, **kwargs):
+        for key, value in kwargs.items():
+            if isinstance(value, BaseModel):
+                kwargs[key] = value.id
+        return kwargs
             
     def create(self, **kwargs): 
-        if len(kwargs.keys()) < len(self.model_class.fields.keys()):
-                raise Exception(f'Please provide information for all fields for {self.model_class.__name__}')
+        if len(kwargs.keys()) < len(self.get_model_class_field_names()) - 1: # -1 for id
+            raise Exception(f'Please provide information for all fields for {self.model_class.__name__}')
         
         if self.check_fields(kwargs):
-        
+            
+            kwargs = self.check_for_foreign_key(**kwargs)
+                
             if not self.get(**kwargs):
-                ModelManagerQueries().create(
+                query = ModelManagerQueries().create(
                     self.get_table_name(), 
                     ', '.join(kwargs.keys()), 
                     ', '.join([f"'{value}'" for value in kwargs.values()])
                 )
+                ExecuteQuery(query).execute()
                 
-                logger.info(f'{self.model_class.__name__.capitalize()} created')
-                return True
-            else:
-                logger.info(f'Object {self.model_class.__name__} with desired field values already exists')
-    
-    def get(self, **kwargs):
+    def get(self, **kwargs): 
         if self.check_fields(kwargs):
+            kwargs = self.check_for_foreign_key(**kwargs)
             query = ModelManagerQueries().get(self.get_table_name(), **kwargs)
+            query = ExecuteQuery(query).execute(read=True)
+            
             if query:
-                return QuerySet(query, self.model_class.fields.keys(), self.model_class).create()
-            else:
-                logger.info(f'No {self.model_class.__name__} found')
-                return False
+                return QuerySet(query, self.model_class).create()
     
-    def update(self, column_id, **kwargs):
+    def update(self, **kwargs):
         if self.check_fields(kwargs):
-            ModelManagerQueries().update(self.get_table_name(), column_id, **kwargs)
-            logger.info(f'{self.model_class.__name__.capitalize()} updated')
-            
-            QuerySet(
-                [(column_id, *kwargs.values())], 
-                self.model_class.fields.keys(),
-                self.model_class
-            ).create()
-            
-            logger.info('Object updated')
-            return True
+            kwargs = self.check_for_foreign_key(**kwargs)
+            query = ModelManagerQueries().update(self.get_table_name(), **kwargs)
+            ExecuteQuery(query).execute()
   
     def delete(self, **kwargs):
-        ModelManagerQueries().delete(self.get_table_name(), **kwargs)
-        logger.info(f'{self.model_class.__name__.capitalize()} deleted')
-        return True
+        kwargs = self.check_for_foreign_key(**kwargs)
+        query = ModelManagerQueries().delete(self.get_table_name(), **kwargs)
+        ExecuteQuery(query).execute()
 
     def all(self) -> None:
         query = ModelManagerQueries().get_all_columns(self.get_table_name())
-        queryset = QuerySet(query, self.model_class.fields.keys(), self.model_class).create()  
-        return queryset
+        query = ExecuteQuery(query).execute(read=True)
+        return QuerySet(query, self.model_class).create()  
 
 
 class MetaModel(type): 
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
-
-        new_class.objects = BaseManager(new_class)
         new_class.table_name = name.lower()
         
         field_list = {}
@@ -86,8 +78,10 @@ class MetaModel(type):
                 field_list[key] = value
                 
         if field_list:
-            new_class.fields = field_list
+            new_class.fields = {**{'id': None}, **field_list}
         
+        new_class.objects = BaseManager(new_class)     
+           
         return new_class
 
 
@@ -95,21 +89,21 @@ class BaseModel(metaclass=MetaModel):
     def __init__(self, **kwargs) -> None:
         for key, value in kwargs.items():
             setattr(self, key, value)
-        
-        self._attrs = dict(self.__dict__.items())
     
     def __repr__(self):
-        attrs_format = ", ".join([f'{field}={value}' for field, value in self._attrs.items()])
+        attrs_format = ", ".join([f'{field}={value}' for field, value in self.__dict__.items()])
         return f"<{self.__class__.__name__}: [{attrs_format}]>"
     
     def save(self) -> None:
-        return self.objects.create(**self._attrs)
+        self.objects.create(**self.__dict__)
       
     def delete(self) -> None:
-        return self.objects.delete(**self._attrs)
-    
+        self.objects.delete(**self.__dict__)
+
     def update(self, **kwargs) -> None:
-        return self.objects.update(self.id, **kwargs)
+        update_data = self.__dict__ if not kwargs else {**{'id': self.id} , **kwargs}
+        self.objects.update(**update_data)
+
     
 
 

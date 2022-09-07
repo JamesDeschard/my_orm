@@ -128,6 +128,9 @@ if __name__ == '__main__':
             PopulateMigrationFile().manager()
         elif sys.argv[1] == 'migrate':
             ExecuteMigrations().manager()
+        elif sys.argv[1] == 'double':
+            PopulateMigrationFile().manager()
+            ExecuteMigrations().manager()
         else:
             sys.stdout.write("Invalid command")
     else:

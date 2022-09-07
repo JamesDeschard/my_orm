@@ -25,8 +25,7 @@ def get_table_columns(table_name):
 
 
 if __name__ == '__main__':
-
     for table in get_db_tables():
-        print(get_table_columns(table))
+        print(get_db_tables(), get_table_columns(table))
 
     

@@ -1,6 +1,10 @@
 import logging
+import sqlite3
+
+from queries import DbStatusQueries
 
 import psycopg2
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('CONNECT')
@@ -38,29 +42,19 @@ class DBStatus(DBConnectionMixin):
     
     def table_exists(self, table_name):
         connection = self.connect()
-        connection.execute(f"""
-                          SELECT EXISTS (
-                            SELECT FROM information_schema.tables 
-                            WHERE  table_schema = 'public'
-                            AND    table_name   = '{table_name}'
-                            );
-                          """)
-        
+        connection.execute(DbStatusQueries().table_exists_query(table_name))
         return connection.fetchone()
     
     def get_all_tables(self):
         self.connect()
-        self.cursor.execute(""" SELECT table_name FROM information_schema.tables
-                                WHERE table_schema = 'public'   """)
-        
+        self.cursor.execute(DbStatusQueries().get_all_tables_query())
         tables = list(map(lambda x: x[0], self.cursor.fetchall()))
         self.close()
         return tables
     
     def get_table_columns(self, table_name):
         self.connect()
-        self.cursor.execute(f""" SELECT column_name FROM information_schema.columns
-                                WHERE table_name = '{table_name}' """)
+        self.cursor.execute(DbStatusQueries().get_table_columns_query(table_name))
         
         columns = list(map(lambda x: x[0], self.cursor.fetchall()))
         self.close()
