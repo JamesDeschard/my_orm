@@ -1,23 +1,41 @@
 from migrate import ExecuteQuery
 
-class QuerySet:
-    def __init__(self, query, model_class, cache=None) -> None:
+class QuerySetSearch:
+    def __init__(self, cached_result) -> None:
+        self.cached_result = cached_result
+        
+    def update_cache(self, sql_extension):
+        if not 'WHERE' in self.cached_result:
+            self.cached_result = f' {self.cached_result} WHERE {sql_extension}'
+        else:
+            self.cached_result = f' {self.cached_result} AND {sql_extension}'
+    
+    def filter_or_exclude(self, type, **kwargs):
+        sql_extension = "".join([f"{key} {type} '{value}'" for key, value in kwargs.items()])
+        self.update_cache(sql_extension)
+        self.hit_db()
+        return self
+        
+    def filter(self, **kwargs):
+        return self.filter_or_exclude('=', **kwargs)
+    
+    def exclude(self, **kwargs):
+        return self.filter_or_exclude('!=', **kwargs)
+        
+    def first(self):
+        self.cached_result = f' {self.cached_result} LIMIT 1'
+        self.hit_db()
+        return self.queryset[0] if self.queryset else None
+    
+
+class QuerySet(QuerySetSearch):
+    def __init__(self, query, model_class) -> None:
+        super().__init__(str())
         self.query = query
         self.model_class = model_class
         self.queryset = list()
         self.index = 0
-        self.cached_result = cache
-    
-    @property
-    def cached_result(self):
-        return self._cached_result
-    
-    @cached_result.setter
-    def cached_result(self, value):
-        if type(value) != str:
-            raise TypeError(f'Cached_result must be a string not {type(value)}')
-        self._cached_result = value
-    
+
     def __iter__(self):
         self.hit_db()
         return self
@@ -56,7 +74,6 @@ class QuerySet:
 
     def hit_db(self):
         query = ExecuteQuery(self.cached_result).execute(read=True)
-        
         if not query:
             return
         
@@ -73,18 +90,4 @@ class QuerySet:
                     obj_attrs[key] = value
                     
             self.queryset.append(self.model_class(**obj_attrs))
-    
-    def filter(self, **kwargs):
-        sql_extention = "".join([f"{key} = '{value}'" for key, value in kwargs.items()])
-        if not 'WHERE' in self.cached_result:
-            self.cached_result = f' {self.cached_result} WHERE {sql_extention}'
-        else:
-            self.cached_result = f' {self.cached_result} AND {sql_extention}'
             
-        self.hit_db()
-        return self
-    
-    def first(self):
-        self.cached_result = f' {self.cached_result} LIMIT 1'
-        self.hit_db()
-        return self

@@ -28,12 +28,10 @@ class MakeMigration(DBStatus):
             logger.error('Invalid action type')
 
     def delete_table(self):
-        if self.table_exists(self.table_name)[0]:
-            return MigrationQueries().drop_table(self.table_name)
+        return MigrationQueries().drop_table(self.table_name)
     
     def create_table(self):
-        if not self.table_exists(self.table_name)[0]:
-            return MigrationQueries().create_table(self.table_name, self.get_fields())
+        return MigrationQueries().create_table(self.table_name, self.get_fields())
     
     def update_table(self, table_name, column, action_type):
         if action_type == 'add':

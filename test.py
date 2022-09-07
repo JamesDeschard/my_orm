@@ -9,30 +9,30 @@ from models import *
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('TESTING')
 
-class TestQuerySets(unittest.TestCase):        
-    pass
+
+def get_random_name(length):
+    return ''.join(random.choice(string.ascii_letters).capitalize() for i in range(length))
+
+
+def create_multiple_authors(amount):
+    for i in range(amount):
+        author = Author(
+            name=get_random_name(random.randrange(3, 10)), 
+            surname=get_random_name(random.randrange(3, 10))
+        )
+        author.save()
+
+
+def create_author():
+    author = Author(name='John', surname='Doe')
+    author.save()
+
 
 class TestCRUD(unittest.TestCase):
     
-    def get_random_name(self, length):
-        return ''.join(random.choice(string.ascii_letters).capitalize() for i in range(length))
-
-    
-    def create_multiple_authors(self, amount):
-        for i in range(amount):
-            author = Author(
-                name=self.get_random_name(random.randrange(3, 10)), 
-                surname=self.get_random_name(random.randrange(3, 10))
-            )
-            author.save()
-    
-    def create_author(self):
-        author = Author(name='John', surname='Doe')
-        author.save()
-    
     def test_create(self):
-        author = Author(name='John', surname='Doe')
-        author.save()
+        create_author()
+        author = Author.objects.get(name='John', surname='Doe')
         self.assertEqual(author.name, 'John')
         self.assertEqual(author.surname, 'Doe')
 
@@ -43,7 +43,7 @@ class TestCRUD(unittest.TestCase):
         self.assertEqual(author, None)
     
     def test_foreign_key(self):
-        self.create_author()
+        create_author()
         author = Author.objects.get(name='John', surname='Doe')
         book = Book(title='Test', author=author)
         book.save()
@@ -57,7 +57,7 @@ class TestCRUD(unittest.TestCase):
         self.assertEqual(author, None)
         
     def test_update(self):
-        self.create_author()
+        create_author()
         author = Author.objects.get(name='John')
         author.update(name='Jane')
         author = Author.objects.get(name='Jane')
@@ -67,13 +67,17 @@ class TestCRUD(unittest.TestCase):
         author.update()
         self.assertEqual(author.name, 'John')
         author.delete() 
+
+
+class TestQuerySets(unittest.TestCase):  
     
-    def test_all(self):
-        self.create_multiple_authors(2)
+    def test_all(self):      
+        create_multiple_authors(2)
         _all = Author.objects.all()
         _all = [author for author in _all]
         
         self.assertEqual(len(_all), 2)
+        
         Author(name='John', surname='Doe').save()
         Author(name='Jane', surname='Doe').save()
         
@@ -82,14 +86,22 @@ class TestCRUD(unittest.TestCase):
         
         for i in Author.objects.all().filter(surname='Doe').filter(name='John'):
             self.assertEqual(i.name, 'John')
-        
+
         first_test = Author.objects.all().filter(surname='Doe').first()
-        self.assertEqual(first_test[0].name, 'John')
+        self.assertEqual(first_test.name, 'John')
 
         for author in Author.objects.all():
             author.delete()
-
-
+            
+        Author(name='John', surname='Doe').save()
+        Author(name='Jane', surname='Doe').save()
+        
+        jane = Author.objects.all().exclude(name='John')
+        self.assertEqual(jane[0].name, 'Jane')
+        
+        for author in Author.objects.all():
+            author.delete()
+        
 if __name__ == '__main__':  
     unittest.main()
     

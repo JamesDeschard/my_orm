@@ -16,6 +16,7 @@ def get_current_models():
             classes[name] = cls
     return classes
 
+
 def get_db_tables():
     return DBStatus(DB_SETTINGS).get_all_tables()
 
@@ -25,7 +26,8 @@ def get_table_columns(table_name):
 
 
 if __name__ == '__main__':
-    for table in get_db_tables():
-        print(get_db_tables(), get_table_columns(table))
+    tables = get_db_tables()
+    for table in tables:
+        print(table, get_table_columns(table))
 
     

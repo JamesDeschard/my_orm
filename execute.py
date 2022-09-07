@@ -6,7 +6,7 @@ import time
 
 from migrate import ExecuteQuery
 from migrations import MakeMigration
-from settings import BASE_DIR
+from settings import BASE_DIR, DB_SETTINGS
 from utils import get_current_models, get_db_tables, get_table_columns
 
 
@@ -28,10 +28,11 @@ class PopulateMigrationFile:
         self.current_file_name = self.get_migration_file_name()
         self.current_file_path = f'{BASE_MIGRATION_PATH}\{self.current_file_name}'
     
-    def manager(self):
+    def manager(self):            
         self.check_create()
         self.check_delete()
         self.check_update()
+            
         self.write_to_file(self.current_file_path, self.query)
     
     def check_existence_of_migration_dir(self):

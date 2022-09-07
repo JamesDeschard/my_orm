@@ -1,27 +1,29 @@
 import logging
-import sqlite3
 
-from queries import DbStatusQueries
-
-import psycopg2
-
+from queries import DbStatusQueriesPostgres, DbStatusQueriesSqlite
+from settings import DB_SETTINGS
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('CONNECT')
 
 
 class DBConnectionMixin:
-    def __init__(self, database_settings) -> None:
-        self.database_settings = database_settings
+    def __init__(self, db_info) -> None:
+        self.db_engine = __import__(db_info.get('db_engine'))
+        self.db_settings = db_info.get('db_settings')
         self.connection = None
         self.cursor = None
         
     def connect(self):
         try:
-            self.connection = psycopg2.connect(**self.database_settings)
-            self.cursor = self.connection.cursor()
-            self.connection.autocommit = True
-            
+            if type(self.db_settings) == dict:
+                self.connection = self.db_engine.connect(**self.db_settings)
+                self.cursor = self.connection.cursor()
+                self.connection.autocommit = True
+            else:
+                self.connection = self.db_engine.connect(self.db_settings, isolation_level=None)
+                self.cursor = self.connection.cursor()
+                
         except Exception as e:
             logger.error(e)
         
@@ -35,28 +37,34 @@ class DBConnectionMixin:
             self.connection.close()
 
 
-class DBStatus(DBConnectionMixin):
-    
-    def __init__(self, database_settings) -> None:
-        super().__init__(database_settings)
-    
+class DBStatus(DBConnectionMixin):       
+    def __init__(self, db_info) -> None:
+        super().__init__(db_info)
+        if db_info.get('db_engine') == 'psycopg2':
+            self.query_class = DbStatusQueriesPostgres()
+        elif db_info.get('db_engine') == 'sqlite3':
+            self.query_class = DbStatusQueriesSqlite()
+        
     def table_exists(self, table_name):
         connection = self.connect()
-        connection.execute(DbStatusQueries().table_exists_query(table_name))
-        return connection.fetchone()
+        connection.execute(self.query_class.table_exists_query(table_name))
+        get_table = connection.fetchone()
+        if not get_table[0] or not get_table():
+            return False
+        else:
+            return get_table
     
     def get_all_tables(self):
         self.connect()
-        self.cursor.execute(DbStatusQueries().get_all_tables_query())
+        self.cursor.execute(self.query_class.get_all_tables_query())
         tables = list(map(lambda x: x[0], self.cursor.fetchall()))
         self.close()
         return tables
     
     def get_table_columns(self, table_name):
         self.connect()
-        self.cursor.execute(DbStatusQueries().get_table_columns_query(table_name))
-        
-        columns = list(map(lambda x: x[0], self.cursor.fetchall()))
+        self.cursor.execute(self.query_class.get_table_columns_query(table_name))
+        columns = list(map(lambda x: x[0] if type(x[0]) == str else x[1], self.cursor.fetchall()))
         self.close()
         return columns
 

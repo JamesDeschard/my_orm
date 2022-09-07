@@ -1,4 +1,7 @@
-class DbStatusQueries:
+from settings import DB_SETTINGS
+
+
+class DbStatusQueriesPostgres:
     def table_exists_query(self, table_name):
         return f""" SELECT EXISTS (SELECT table_name FROM information_schema.tables 
                     WHERE table_name = '{table_name}'); """
@@ -11,10 +14,23 @@ class DbStatusQueries:
         return f""" SELECT column_name FROM information_schema.columns
                     WHERE table_name = '{table_name}'; """
 
+
+class DbStatusQueriesSqlite:
+    def table_exists_query(self, table_name):
+        return f""" SELECT name FROM sqlite_schema WHERE type='table' AND name='{table_name}'; """
+    
+    def get_all_tables_query(self):
+        return """ SELECT name FROM sqlite_schema WHERE type='table'; """
+    
+    def get_table_columns_query(self, table_name):
+        return f""" PRAGMA table_info({table_name})"""
+
     
 class MigrationQueries:
     def create_table(self, table_name, fields):
-        return f'CREATE TABLE {table_name} (id SERIAL PRIMARY KEY,{",".join(fields)});'
+        return f""" CREATE TABLE IF NOT EXISTS {table_name} 
+                    (id {"INTEGER" if DB_SETTINGS.get("db_engine") == "sqlite3" else "SERIAL"} PRIMARY KEY,
+                    {",".join(fields)});"""
     
     def add_column(self, table_name, column_name, column_definition):
         return f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition};'

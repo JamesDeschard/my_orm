@@ -45,8 +45,7 @@ class BaseManager:
         if self.check_fields(kwargs):
             kwargs = self.check_for_foreign_key(**kwargs)
             query = ModelManagerQueries().get(self.get_table_name(), **kwargs)
-            if query:
-                return QuerySet(query, self.model_class).create(get_unique=True)
+            return QuerySet(query, self.model_class).create(get_unique=True)
     
     def update(self, **kwargs):
         if self.check_fields(kwargs):

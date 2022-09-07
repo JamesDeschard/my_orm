@@ -16,6 +16,8 @@ class ExecuteQuery(DBConnectionMixin):
         return_content = None
         if self.query:
             connection = self.connect()
+            if DB_SETTINGS.get('db_engine') == 'sqlite3':
+                connection.execute("PRAGMA foreign_keys = 1")
             connection.execute(self.query)
             if read:
                 return_content = connection.fetchall()

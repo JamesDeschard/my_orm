@@ -1,4 +1,7 @@
+from settings import DB_SETTINGS
+
 # Relations
+
 
 class ForeignKey:
     def __init__(self, model_reference, on_delete=None) -> None:
