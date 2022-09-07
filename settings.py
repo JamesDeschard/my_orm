@@ -14,7 +14,6 @@ DB_SETTINGS = {
     }   
 }
 
-
 # DB_SETTINGS = {
 #     'db_engine': 'sqlite3',
 #     'db_settings': 'db.sqlite3', 

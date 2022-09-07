@@ -79,7 +79,3 @@ class ModelManagerQueries:
     
     def get_all_columns(self, table_name):
         return f"SELECT * FROM {table_name}"
-
-    
-    
-    

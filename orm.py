@@ -100,7 +100,3 @@ class BaseModel(metaclass=MetaModel):
     def update(self, **kwargs) -> None:
         update_data = self.__dict__ if not kwargs else {**{'id': self.id} , **kwargs}
         self.objects.update(**update_data)
-
-    
-
-

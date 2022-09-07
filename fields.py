@@ -1,5 +1,3 @@
-from settings import DB_SETTINGS
-
 # Relations
 
 
@@ -60,21 +58,21 @@ class BooleanField:
 
 # DATE TYPES
 
-class DateField:
-    def create_migration(self) -> str:
-        return f'date'
+# class DateField:
+#     def create_migration(self) -> str:
+#         return f'date'
     
-    def __str__(self) -> str:
-        return self.create_migration()
+#     def __str__(self) -> str:
+#         return self.create_migration()
 
 
-class DateTimeField:
-    def create_migration(self) -> str:
-        return f'datetime'
+# class DateTimeField:
+#     def create_migration(self) -> str:
+#         return f'datetime'
     
     
-    def __str__(self) -> str:
-        return self.create_migration()
+#     def __str__(self) -> str:
+#         return self.create_migration()
     
 
 # class ValidateFieldData:

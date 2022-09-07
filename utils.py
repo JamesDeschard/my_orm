@@ -1,8 +1,12 @@
 import importlib
 import inspect
+import logging
 
 from connect import DBStatus
 from settings import DB_SETTINGS
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger('UTILS')
 
 
 def get_current_models():
@@ -28,6 +32,5 @@ def get_table_columns(table_name):
 if __name__ == '__main__':
     tables = get_db_tables()
     for table in tables:
-        print(table, get_table_columns(table))
-
+        logger.info(table, get_table_columns(table))
     

@@ -3,8 +3,16 @@ import logging
 from queries import DbStatusQueriesPostgres, DbStatusQueriesSqlite
 from settings import DB_SETTINGS
 
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('CONNECT')
+
+
+def get_status_query_class():
+    if DB_SETTINGS.get('db_engine') == 'psycopg2':
+        return DbStatusQueriesPostgres()
+    elif DB_SETTINGS.get('db_engine') == 'sqlite3':
+        return DbStatusQueriesSqlite()
 
 
 class DBConnectionMixin:
@@ -40,10 +48,7 @@ class DBConnectionMixin:
 class DBStatus(DBConnectionMixin):       
     def __init__(self, db_info) -> None:
         super().__init__(db_info)
-        if db_info.get('db_engine') == 'psycopg2':
-            self.query_class = DbStatusQueriesPostgres()
-        elif db_info.get('db_engine') == 'sqlite3':
-            self.query_class = DbStatusQueriesSqlite()
+        self.query_class = get_status_query_class()
         
     def table_exists(self, table_name):
         connection = self.connect()
@@ -67,9 +72,3 @@ class DBStatus(DBConnectionMixin):
         columns = list(map(lambda x: x[0] if type(x[0]) == str else x[1], self.cursor.fetchall()))
         self.close()
         return columns
-
-
-
-
-
-        

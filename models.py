@@ -9,4 +9,3 @@ class Author(BaseModel):
 class Book(BaseModel):
     title = CharField(max_length=255)
     author = ForeignKey(Author, on_delete='CASCADE')
-

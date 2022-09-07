@@ -102,8 +102,7 @@ class TestQuerySets(unittest.TestCase):
         for author in Author.objects.all():
             author.delete()
         
+        
 if __name__ == '__main__':  
     unittest.main()
-    
-    
     
