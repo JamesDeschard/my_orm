@@ -1,2 +1,0 @@
-ALTER TABLE person ADD COLUMN surname VARCHAR (255);
- ############## 

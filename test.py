@@ -9,6 +9,8 @@ from models import *
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('TESTING')
 
+class TestQuerySets(unittest.TestCase):        
+    pass
 
 class TestCRUD(unittest.TestCase):
     
@@ -67,17 +69,26 @@ class TestCRUD(unittest.TestCase):
         author.delete() 
     
     def test_all(self):
-        for author in Author.objects.all():
-            author.delete()
-        self.create_multiple_authors(5)
+        self.create_multiple_authors(2)
         _all = Author.objects.all()
-        print(_all.filter())
-        self.assertEqual(len(_all), 5)
+        _all = [author for author in _all]
+        
+        self.assertEqual(len(_all), 2)
+        Author(name='John', surname='Doe').save()
+        Author(name='Jane', surname='Doe').save()
+        
+        for i in Author.objects.all().filter(surname='Doe'):
+            self.assertEqual(i.surname, 'Doe')
+        
+        for i in Author.objects.all().filter(surname='Doe').filter(name='John'):
+            self.assertEqual(i.name, 'John')
+        
+        first_test = Author.objects.all().filter(surname='Doe').first()
+        self.assertEqual(first_test[0].name, 'John')
+
         for author in Author.objects.all():
             author.delete()
-        self.assertEqual(len(Author.objects.all()), 0)
 
-    
 
 if __name__ == '__main__':  
     unittest.main()

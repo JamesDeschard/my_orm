@@ -1,4 +1,5 @@
-from queries import ModelManagerQueries, QuerySet
+from queries import ModelManagerQueries
+from queryset import QuerySet
 from migrate import ExecuteQuery
 
 
@@ -44,10 +45,8 @@ class BaseManager:
         if self.check_fields(kwargs):
             kwargs = self.check_for_foreign_key(**kwargs)
             query = ModelManagerQueries().get(self.get_table_name(), **kwargs)
-            query = ExecuteQuery(query).execute(read=True)
-            
             if query:
-                return QuerySet(query, self.model_class).create()
+                return QuerySet(query, self.model_class).create(get_unique=True)
     
     def update(self, **kwargs):
         if self.check_fields(kwargs):
@@ -62,7 +61,6 @@ class BaseManager:
 
     def all(self) -> None:
         query = ModelManagerQueries().get_all_columns(self.get_table_name())
-        query = ExecuteQuery(query).execute(read=True)
         return QuerySet(query, self.model_class).create()  
 
 

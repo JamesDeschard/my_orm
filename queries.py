@@ -62,65 +62,8 @@ class ModelManagerQueries:
         return query
     
     def get_all_columns(self, table_name):
-        return f"SELECT * FROM {table_name};"
+        return f"SELECT * FROM {table_name}"
 
-
-class QueryObject:
-    def __init__(self) -> None:
-        pass
-
-
-class QuerySet:
-    def __init__(self, query, model_class) -> None:
-        self.query = query
-        self.model_class = model_class
-        self.queryset = list()
-        self.index = 0
-
-    def __iter__(self):
-        return self
-    
-    def __next__(self):
-        if self.index < len(self.queryset):
-            result = self.queryset[self.index]
-            self.index += 1
-            return result
-        raise StopIteration
-    
-    def __len__(self):
-        return len(self.queryset)
-        
-    def check_for_relation(self):
-        for field_name, field_value in self.model_class.fields.items():
-            if field_value.__class__.__name__ == 'ForeignKey':
-                foreignkey = __import__('models')
-                foreignkey = getattr(foreignkey, field_name.capitalize())
-                return field_name, foreignkey
-        return False, False
-
-
-    def create(self) -> list:
-        for q in self.query:
-            
-            obj_attrs = dict()
-            foreign_key_field, foreign_key_model = self.check_for_relation()
-            
-            for key, value in zip(self.model_class.fields.keys(), q):
-                if foreign_key_field and key == foreign_key_field:
-                    obj_attrs[key] = foreign_key_model.objects.get(id=value)
-                else:
-                    obj_attrs[key] = value
-                    
-            self.queryset.append(self.model_class(**obj_attrs))
-        if len(self.queryset) == 1:
-            return self.queryset[0]
-        return self
-    
-    def filter(self, **kwargs):
-        return 'Filter method called'
-    
-    def first(self):
-        pass
     
     
     
