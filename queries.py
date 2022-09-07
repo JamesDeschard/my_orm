@@ -60,11 +60,8 @@ class ModelManagerQueries:
         return query
 
     def create(self, table_name, column_name, value):
-        query = f"""
-                INSERT INTO {table_name} ({column_name})
-                VALUES ({value})
-                """
-        return query
+        return f'INSERT INTO {table_name} ({column_name})VALUES ({value})'
+
     
     def update(self, table_name, id, **kwargs):
         query = f"UPDATE {table_name} SET "

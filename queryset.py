@@ -33,6 +33,7 @@ class QuerySet(QuerySetSearch):
         super().__init__(str())
         self.query = query
         self.model_class = model_class
+        
         self.queryset = list()
         self.index = 0
 
