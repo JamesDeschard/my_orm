@@ -4,9 +4,9 @@ import logging
 import os
 import time
 
-from settings import BASE_DIR, DB_SETTINGS
+from settings import BASE_DIR
 
-from orm.db_connections import DBStatus, ExecuteQuery
+from orm.db_connections import ExecuteQuery
 from orm.sql_queries import MigrationQueries
 from orm.utils import get_current_models, get_db_tables, get_table_columns
 
@@ -18,9 +18,8 @@ BASE_MIGRATION_PATH = os.path.join(BASE_DIR, 'migrations')
 QUERY_SEPARATOR = '\n ############## \n'
 
 
-class MakeMigration(DBStatus):
+class MakeMigration:
     def __init__(self, table_name, fields, action_type) -> None:
-        super().__init__(DB_SETTINGS)
         self.table_name = table_name
         self.fields = fields
         self.action_type = action_type
