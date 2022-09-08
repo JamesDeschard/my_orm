@@ -31,8 +31,6 @@ class MakeMigration:
             return self.delete_table()
         elif self.action_type == 'update':
             return self.update_table(self.table_name, self.fields, args[0])
-        else:
-            logger.error('Invalid action type')
 
     def delete_table(self):
         return MigrationQueries().drop_table(self.table_name)
@@ -45,6 +43,7 @@ class MakeMigration:
             new_column_name = list(column.keys())[0]
             new_column_definition = list(column.values())[0]
             return MigrationQueries().add_column(table_name, new_column_name, new_column_definition)
+        
         elif action_type == 'remove':
             return MigrationQueries().remove_column(table_name, column)
             
@@ -100,15 +99,16 @@ class PopulateMigrationFile:
                 self.add_to_query(new_migration)
     
     def check_update(self):
-        model_field_names = {name.lower(): 
-            ['id'] + list(_class.fields.keys()) for name, _class in self.current_file_classes.items()}
+        model_field_names = {name.lower(): list(_class.fields.keys()) for name, _class in self.current_file_classes.items()}
         
+        print(self.current_db_tables)
         for table_name in self.current_db_tables:
             current_db_columns = set(get_table_columns(table_name))
             current_model_columns = model_field_names.get(table_name)
             
             if current_model_columns:
                 field_difference = set(current_db_columns - set(current_model_columns) | set(current_model_columns) - set(current_db_columns))
+                print(field_difference)
 
                 for field in field_difference:
                     if len(current_model_columns) > len(current_db_columns):

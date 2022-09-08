@@ -42,7 +42,7 @@ def get_db_tables():
 
 def get_table_columns(table_name):
     query_class = get_status_query_class()
-    query = ExecuteQuery(query_class.table_exists_query(table_name)).execute(read=True)
+    query = ExecuteQuery(query_class.get_table_columns_query(table_name)).execute(read=True)
     columns = list(map(lambda x: x[0] if type(x[0]) == str else x[1], query))
     return columns
 
