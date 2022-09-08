@@ -1,7 +1,7 @@
 import importlib
 
 from .utils import get_class_module
-from .connect import ExecuteQuery
+from .db_connections import ExecuteQuery
 
 
 class QuerySetSearch:

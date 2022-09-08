@@ -1,6 +1,10 @@
-from .queries import ModelManagerQueries
+import sys
+import inspect
+import importlib
+
+from .sql_queries import ModelManagerQueries
 from .queryset import QuerySet
-from .connect import ExecuteQuery
+from .db_connections import ExecuteQuery
 
 
 class BaseManager:  
@@ -64,6 +68,18 @@ class BaseManager:
 
 
 class MetaModel(type): 
+    """
+    The goal of this class meta is to collect the model class attribute names and store them in a dictionary.
+    It also sets the manager and the model field attributes to the BaseModel class.
+    
+    For example:
+        class Person(BaseModel):
+            name = BaseModel.CharField(max_length=50)
+    
+    In this case, the fields dictionary will be {'name': class <orm.model_fields.CharField>}
+    This helps later down the road to create the database tables.
+    """
+    
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
         new_class.table_name = name.lower()
@@ -77,8 +93,19 @@ class MetaModel(type):
         if field_list:
             new_class.fields = {**{'id': None}, **field_list}
         
-        new_class.objects = BaseManager(new_class)     
-           
+        # Create a manager for the model
+        
+        new_class.objects = BaseManager(new_class)   
+        
+        # Add model fields to the model 
+        
+        model_fields_module = importlib.import_module('orm.model_fields')
+        model_fields =  inspect.getmembers(model_fields_module, inspect.isclass)
+
+        for name, _class in model_fields:
+            setattr(new_class, name, _class)
+         
+
         return new_class
 
 
@@ -100,3 +127,4 @@ class BaseModel(metaclass=MetaModel):
     def update(self, **kwargs) -> None:
         update_data = self.__dict__ if not kwargs else {**{'id': self.id} , **kwargs}
         self.objects.update(**update_data)
+        

@@ -1,5 +1,3 @@
-from db_link.fields import CharField, IntegerField, ForeignKey
-
-from db_link.orm import BaseModel
+from orm.orm_base_model import BaseModel
 
 # Create your models here.

@@ -22,6 +22,7 @@ DB_SETTINGS = {
 
 ACTIVATE_TESTING = True
 
+
 CURRENT_MODELS = [
     'models',  
 ]

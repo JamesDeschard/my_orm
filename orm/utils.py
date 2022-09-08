@@ -3,7 +3,7 @@ import inspect
 
 import settings
 
-from .connect import DBStatus
+from .db_connections import DBStatus
 
 
 def get_current_models():

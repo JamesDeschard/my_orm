@@ -2,7 +2,7 @@ import logging
 
 from settings import DB_SETTINGS
 
-from .queries import DbStatusQueriesPostgres, DbStatusQueriesSqlite
+from .sql_queries import DbStatusQueriesPostgres, DbStatusQueriesSqlite
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('CONNECT')

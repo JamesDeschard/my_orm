@@ -6,9 +6,9 @@ import time
 
 from settings import BASE_DIR, DB_SETTINGS
 
-from db_link.connect import DBStatus, ExecuteQuery
-from db_link.queries import MigrationQueries
-from db_link.utils import get_current_models, get_db_tables, get_table_columns
+from orm.db_connections import DBStatus, ExecuteQuery
+from orm.sql_queries import MigrationQueries
+from orm.utils import get_current_models, get_db_tables, get_table_columns
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('MIGRATIONS')
