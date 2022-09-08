@@ -33,13 +33,6 @@ class DBConnectionMixin:
             self.connection.close()
 
 
-def get_status_query_class():
-    if DB_SETTINGS.get('db_engine') == 'psycopg2':
-        return DbStatusQueriesPostgres()
-    elif DB_SETTINGS.get('db_engine') == 'sqlite3':
-        return DbStatusQueriesSqlite()
-
-
 class ExecuteQuery(DBConnectionMixin):
     def __init__(self, query) -> None:
         super().__init__(DB_SETTINGS)
