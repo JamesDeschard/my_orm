@@ -101,14 +101,12 @@ class PopulateMigrationFile:
     def check_update(self):
         model_field_names = {name.lower(): list(_class.fields.keys()) for name, _class in self.current_file_classes.items()}
         
-        print(self.current_db_tables)
         for table_name in self.current_db_tables:
             current_db_columns = set(get_table_columns(table_name))
             current_model_columns = model_field_names.get(table_name)
             
             if current_model_columns:
                 field_difference = set(current_db_columns - set(current_model_columns) | set(current_model_columns) - set(current_db_columns))
-                print(field_difference)
 
                 for field in field_difference:
                     if len(current_model_columns) > len(current_db_columns):
