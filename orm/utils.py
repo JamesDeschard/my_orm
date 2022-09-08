@@ -9,6 +9,7 @@ from .db_connections import DBStatus
 def get_current_models():
     if settings.ACTIVATE_TESTING:
         settings.CURRENT_MODELS.append('tests.test_models')
+    
     classes = dict()
     for module in settings.CURRENT_MODELS:
         module_classes = inspect.getmembers(importlib.import_module(module), inspect.isclass)
@@ -16,6 +17,7 @@ def get_current_models():
             if cls.__module__ == module:
                 classes[name] = cls
     return classes
+
 
 
 def get_class_module(field_name):

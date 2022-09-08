@@ -26,16 +26,13 @@ class DBConnectionMixin:
         try:
             if type(self.db_settings) == dict:
                 self.connection = self.db_engine.connect(**self.db_settings)
-                self.cursor = self.connection.cursor()
-                self.connection.autocommit = True
             else:
-                self.connection = self.db_engine.connect(self.db_settings, isolation_level=None)
-                self.cursor = self.connection.cursor()
+                self.connection = self.db_engine.connect(self.db_settings)
+                
+            self.cursor = self.connection.cursor()
                 
         except Exception as e:
             logger.error(e)
-        
-        return self.cursor
     
     def close(self):
         if self.cursor is not None:
@@ -82,15 +79,18 @@ class ExecuteQuery(DBConnectionMixin):
     def execute(self, read=False):
         return_content = None
         if self.query:
-            connection = self.connect()
+            self.connect()
             
             if DB_SETTINGS.get('db_engine') == 'sqlite3':
-                connection.execute("PRAGMA foreign_keys = 1")
+                self.cursor.execute("PRAGMA foreign_keys = 1")
             
-            connection.execute(self.query)
+            self.cursor.execute(self.query)
+            self.connection.commit()
+            
             if read:
-                return_content = connection.fetchall()
+                content = self.cursor.fetchall()
                 self.close()
-                return return_content
+                return content
+            
             self.close()
             

@@ -1,9 +1,11 @@
 import logging
-import unittest
 import sys
+import unittest
+
+import settings
 
 from orm.db_migrations import ExecuteMigrations, PopulateMigrationFile
-from orm.utils import get_db_tables, get_table_columns, get_current_models
+from orm.utils import get_current_models, get_db_tables, get_table_columns
 from tests.orm_test import TestCRUD
 from tests.queryset_test import TestQuerySets
 
@@ -26,27 +28,27 @@ def show_db_schema():
 
 
 def test():
-    crud = unittest.TestLoader().loadTestsFromTestCase(TestCRUD)
-    queryset = unittest.TestLoader().loadTestsFromTestCase(TestQuerySets)
-    suite= unittest.TestSuite([crud, queryset])
-    runner = unittest.TextTestRunner()
-    runner.run(suite)
-
+    if settings.ACTIVATE_TESTING:
+        logger.info('Running tests...')
+        crud = unittest.TestLoader().loadTestsFromTestCase(TestCRUD)
+        queryset = unittest.TestLoader().loadTestsFromTestCase(TestQuerySets)
+        suite= unittest.TestSuite([crud, queryset])
+        runner = unittest.TextTestRunner()
+        runner.run(suite)
+        logger.info('Tests completed')
+    else:
+        logger.info('Testing is not activated in settings.py')
 
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
         manager_arg = sys.argv[1]
-        if manager_arg == 'makemigrations':
-            makemigrations()
-        elif manager_arg == 'migrate':
-            migrate()
-        elif manager_arg == 'double':
+        if manager_arg == 'migrate':
             makemigrations()
             migrate()
-        elif manager_arg == 'dbtables':
+        elif manager_arg == 'db_tables':
             show_db_schema()
-        elif manager_arg == 'models':
+        elif manager_arg == 'my_models':
             logger.info(f'{get_current_models()}')
         elif manager_arg == 'test':
             test()

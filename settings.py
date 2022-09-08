@@ -19,10 +19,11 @@ DB_SETTINGS = {
     'db_settings': 'db.sqlite3', 
 }
 
-
+# Will add the test_models to the models list
 ACTIVATE_TESTING = True
 
 
 CURRENT_MODELS = [
+    # Add names of files containing models here
     'models',  
 ]

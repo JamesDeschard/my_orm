@@ -1,4 +1,0 @@
-DROP TABLE IF EXISTS author CASCADE;
- ############## 
-DROP TABLE IF EXISTS book CASCADE;
- ############## 
