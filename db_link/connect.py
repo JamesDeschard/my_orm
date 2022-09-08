@@ -1,6 +1,6 @@
 import logging
 
-from queries import DbStatusQueriesPostgres, DbStatusQueriesSqlite
+from db_link.queries import DbStatusQueriesPostgres, DbStatusQueriesSqlite
 from settings import DB_SETTINGS
 
 
@@ -54,7 +54,7 @@ class DBStatus(DBConnectionMixin):
         connection = self.connect()
         connection.execute(self.query_class.table_exists_query(table_name))
         get_table = connection.fetchone()
-        if not get_table[0] or not get_table():
+        if not get_table[0] or not get_table:
             return False
         else:
             return get_table
@@ -72,3 +72,25 @@ class DBStatus(DBConnectionMixin):
         columns = list(map(lambda x: x[0] if type(x[0]) == str else x[1], self.cursor.fetchall()))
         self.close()
         return columns
+
+
+class ExecuteQuery(DBConnectionMixin):
+    def __init__(self, query) -> None:
+        super().__init__(DB_SETTINGS)
+        self.query = query
+    
+    def execute(self, read=False):
+        return_content = None
+        if self.query:
+            connection = self.connect()
+            
+            if DB_SETTINGS.get('db_engine') == 'sqlite3':
+                connection.execute("PRAGMA foreign_keys = 1")
+                
+            connection.execute(self.query)
+            if read:
+                return_content = connection.fetchall()
+                self.close()
+                return return_content
+            self.close()
+            

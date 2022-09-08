@@ -1,20 +1,60 @@
+
 import glob
 import logging
 import os
-import sys
 import time
 
-from migrate import ExecuteQuery
-from migrations import MakeMigration
-from settings import BASE_DIR
-from utils import get_current_models, get_db_tables, get_table_columns
+from settings import BASE_DIR, DB_SETTINGS
+
+from db_link.connect import DBStatus, ExecuteQuery
+from db_link.queries import MigrationQueries
+from db_link.utils import get_current_models, get_db_tables, get_table_columns
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger('MIGRATIONS')
+
 
 BASE_MIGRATION_PATH = os.path.join(BASE_DIR, 'migrations')
 QUERY_SEPARATOR = '\n ############## \n'
 
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger('EXECUTE')
+class MakeMigration(DBStatus):
+    def __init__(self, table_name, fields, action_type) -> None:
+        super().__init__(DB_SETTINGS)
+        self.table_name = table_name
+        self.fields = fields
+        self.action_type = action_type
+    
+    def manager(self, *args):
+        if self.action_type == 'create':
+            return self.create_table()
+        elif self.action_type == 'delete':
+            return self.delete_table()
+        elif self.action_type == 'update':
+            return self.update_table(self.table_name, self.fields, args[0])
+        else:
+            logger.error('Invalid action type')
+
+    def delete_table(self):
+        return MigrationQueries().drop_table(self.table_name)
+    
+    def create_table(self):
+        return MigrationQueries().create_table(self.table_name, self.get_fields())
+    
+    def update_table(self, table_name, column, action_type):
+        if action_type == 'add':
+            new_column_name = list(column.keys())[0]
+            new_column_definition = list(column.values())[0]
+            return MigrationQueries().add_column(table_name, new_column_name, new_column_definition)
+        elif action_type == 'remove':
+            return MigrationQueries().remove_column(table_name, column)
+            
+    def get_fields(self):
+        fields = []
+        for key, value in self.fields.items():
+            if key != 'id':
+                fields.append(f'{key} {value.create_migration()}')
+        return fields
 
 
 class PopulateMigrationFile:
@@ -31,7 +71,6 @@ class PopulateMigrationFile:
         self.check_create()
         self.check_delete()
         self.check_update()
-            
         self.write_to_file(self.current_file_path, self.query)
     
     def check_existence_of_migration_dir(self):
@@ -106,8 +145,6 @@ class ExecuteMigrations:
     def manager(self):
         if self.migration_files is not None:
             self.migrate()
-        else:
-            logger.info('No migrations to apply!')  
     
     def migrate(self):
         queries = None
@@ -120,18 +157,3 @@ class ExecuteMigrations:
             queries = query.split(QUERY_SEPARATOR)
             for query in queries:
                 ExecuteQuery(query).execute()
-    
-
-if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        if sys.argv[1] == 'makemigrations':
-            PopulateMigrationFile().manager()
-        elif sys.argv[1] == 'migrate':
-            ExecuteMigrations().manager()
-        elif sys.argv[1] == 'double':
-            PopulateMigrationFile().manager()
-            ExecuteMigrations().manager()
-        else:
-            sys.stdout.write("Invalid command")
-    else:
-        sys.stdout.write("No command provided")

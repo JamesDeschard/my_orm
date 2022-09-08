@@ -1,11 +1,8 @@
-from fields import CharField, IntegerField, ForeignKey
-from orm import BaseModel
+from db_link.fields import CharField, IntegerField, ForeignKey
 
+from db_link.orm import BaseModel
 
-class Author(BaseModel):
+class Person(BaseModel):
     name = CharField(max_length=255)
-    surname = CharField(max_length=255)
 
-class Book(BaseModel):
-    title = CharField(max_length=255)
-    author = ForeignKey(Author, on_delete='CASCADE')
+# Create your models here.
