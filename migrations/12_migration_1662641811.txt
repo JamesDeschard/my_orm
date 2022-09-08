@@ -1,0 +1,6 @@
+DROP TABLE IF EXISTS person ;
+ ############## 
+DROP TABLE IF EXISTS author ;
+ ############## 
+DROP TABLE IF EXISTS book ;
+ ############## 

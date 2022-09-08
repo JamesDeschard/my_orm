@@ -1,8 +1,8 @@
 import logging
 
-from db_link.queries import DbStatusQueriesPostgres, DbStatusQueriesSqlite
 from settings import DB_SETTINGS
 
+from .queries import DbStatusQueriesPostgres, DbStatusQueriesSqlite
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('CONNECT')
@@ -86,7 +86,7 @@ class ExecuteQuery(DBConnectionMixin):
             
             if DB_SETTINGS.get('db_engine') == 'sqlite3':
                 connection.execute("PRAGMA foreign_keys = 1")
-                
+            
             connection.execute(self.query)
             if read:
                 return_content = connection.fetchall()

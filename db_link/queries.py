@@ -27,9 +27,12 @@ class DbStatusQueriesSqlite:
 
     
 class MigrationQueries:
+    def engine_type_var(self, engine, option_1, option_2):
+        return option_1 if DB_SETTINGS.get("db_engine") == engine else option_2
+    
     def create_table(self, table_name, fields):
         return f""" CREATE TABLE IF NOT EXISTS {table_name} 
-                    (id {"INTEGER" if DB_SETTINGS.get("db_engine") == "sqlite3" else "SERIAL"} PRIMARY KEY,
+                    (id {self.engine_type_var('sqlite3', 'INTEGER', 'SERIAL')} PRIMARY KEY,
                     {",".join(fields)});"""
     
     def add_column(self, table_name, column_name, column_definition):
@@ -39,7 +42,7 @@ class MigrationQueries:
         return f'ALTER TABLE {table_name} DROP COLUMN {column_name} ;'
         
     def drop_table(self, table_name):
-        return f'DROP TABLE IF EXISTS {table_name} CASCADE;'
+        return f'DROP TABLE IF EXISTS {table_name} {self.engine_type_var("sqlite3", "", "CASCADE")};'
     
 
 class ModelManagerQueries:

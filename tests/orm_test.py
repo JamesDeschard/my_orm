@@ -1,7 +1,7 @@
 import logging
 import unittest
 
-from .test_models import Author, Book
+from .test_models import *
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('TESTING')

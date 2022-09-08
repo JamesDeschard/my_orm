@@ -2,7 +2,7 @@ import random
 import string
 import unittest
 
-from .test_models import Author
+from .test_models import *
 
 
 def get_random_name(length):

@@ -1,0 +1,8 @@
+ CREATE TABLE IF NOT EXISTS author 
+                    (id INTEGER PRIMARY KEY,
+                    name VARCHAR (255),surname VARCHAR (255));
+ ############## 
+ CREATE TABLE IF NOT EXISTS book 
+                    (id INTEGER PRIMARY KEY,
+                    title VARCHAR (255),author INTEGER REFERENCES author (id) ON DELETE CASCADE);
+ ############## 

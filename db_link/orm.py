@@ -1,6 +1,6 @@
-from db_link.queries import ModelManagerQueries
-from db_link.queryset import QuerySet
-from db_link.connect import ExecuteQuery
+from .queries import ModelManagerQueries
+from .queryset import QuerySet
+from .connect import ExecuteQuery
 
 
 class BaseManager:  
