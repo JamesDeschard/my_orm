@@ -1,7 +1,6 @@
 
 import inspect
 import importlib
-from xmlrpc.client import boolean
 
 from .sql_queries import ModelManagerQueries
 from .queryset import QuerySet
@@ -23,12 +22,12 @@ class BaseManager:
             if field_value and not fields.get(field_name):
                 if field_value.null:
                     fields[field_name] = None
-                if field_value.default or field_value.default == 0 and type(field_value.default) in [int, float]: # is this ugly af ?
+                if field_value.default or type(field_value.default) == int: # is this ugly af, other way of avoiding edge case (default=0) ? try except?
                     fields[field_name] = field_value.default
                 if field_value.blank:
                     fields[field_name] = ''
                     
-                # Possible to check for unique? Is it worth to check the db for this? --> Would be a lot of queries...
+                # Possible to check for unique? Is it worth to check the db for this? --> Would be a lot of queries for a simple Exception message
 
         for field_name, field_value in fields.items():
             if field_name not in self.get_model_class_field_names():
@@ -51,42 +50,53 @@ class BaseManager:
                     ', '.join([f"'{value}'" for value in kwargs.values()])
                 )
                 ExecuteQuery(query).execute()
+                return True
                 
     def get(self, **kwargs): 
         if self.certify_field_compatibility(kwargs):
             query = ModelManagerQueries().get(self.get_table_name(), **kwargs)
-            return QuerySet(query, self.model_class).create(get_unique=True)
+            return QuerySet(query, self.model_class).build(get_unique=True)
     
     def update(self, **kwargs):
         if self.certify_field_compatibility(kwargs):
             query = ModelManagerQueries().update(self.get_table_name(), **kwargs)
             ExecuteQuery(query).execute()
+            return True
   
     def delete(self, **kwargs):
         query = ModelManagerQueries().delete(self.get_table_name(), **kwargs)
         ExecuteQuery(query).execute()
+        return True
 
     def all(self) -> None:
         query = ModelManagerQueries().get_all_columns(self.get_table_name())
-        return QuerySet(query, self.model_class).create()  
+        return QuerySet(query, self.model_class).build()  
 
 
 class MetaModel(type): 
     """
-    The goal of this class meta is to collect the model class attribute names and store them in a dictionary.
-    It also sets the manager and the model field attributes to the BaseModel instance.
+    MetaModel is a metaclass, which means that it is a class that creates classes.
+    The goal is to collect the model class attribute names and store them in a dictionary.
     
-    For example:
+    It also sets the corresponding table name, the manager and the model field attributes.
+    
+    Example:
+    
         class Person(BaseModel):
             name = BaseModel.CharField(max_length=50)
     
     In this case, the fields dictionary will be {'name': class <orm.model_fields.CharField>}
-    This helps later down the road to create the database tables.
+    These pythonic gymnasitcs help later down the road to create the database tables.
     """
     
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
+        
+        # Set the future database table name
+        
         new_class.table_name = name.lower()
+        
+        # Create the fields dictionary
         
         field_list = {}
         
@@ -97,20 +107,18 @@ class MetaModel(type):
         if field_list:
             new_class.fields = {**{'id': None}, **field_list}
         
-        # Create a manager for the model
+        # Set the model manager
         
         new_class.objects = BaseManager(new_class)   
         
-        # Add model fields to the model 
+        # Set the model field attributes
         
         model_fields_module = importlib.import_module('orm.model_fields')
         model_fields = inspect.getmembers(model_fields_module, inspect.isclass)
 
         for name, _class in model_fields[1:]: # Remove the BaseField class
-            print(name, _class)
             setattr(new_class, name, _class)
          
-
         return new_class
 
 

@@ -114,7 +114,7 @@ class QuerySet(QuerySetSearch):
                 return field_name, foreignkey
         return False, False
 
-    def create(self, get_unique=False) -> list: 
+    def build(self, get_unique=False) -> list: 
         if not self.cached_result:
             self.cached_result = self.query  
                   

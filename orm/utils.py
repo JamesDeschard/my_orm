@@ -61,6 +61,3 @@ def get_table_columns(table_name):
     query = ExecuteQuery(query_class.get_table_columns_query(table_name)).execute(read=True)
     columns = list(map(lambda x: x[0] if type(x[0]) == str else x[1], query))
     return columns
-
-
-

@@ -42,7 +42,6 @@ class ForeignKey(BaseField):
         query = self.add_default_fields_to_migration(query)
         return query
     
-    
     def __str__(self) -> str:
         return self.create_migration()
 

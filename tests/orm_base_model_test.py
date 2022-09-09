@@ -40,6 +40,17 @@ class TestCRUD(unittest.TestCase):
         self.assertEqual(book, None)
         self.assertEqual(author, None)
         
+        author = Author(name='John', surname='Doe')
+        author.save()
+        author = Author.objects.get(name='John')
+        for i in range(5):
+            book = Book(title=f'Test_{i}', author=author)
+            book.save()
+        
+        for i in Book.objects.all():
+            print(i)
+
+        
     def test_update(self):
         create_author()
         author = Author.objects.get(name='John')
