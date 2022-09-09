@@ -1,6 +1,7 @@
-import sys
+
 import inspect
 import importlib
+from xmlrpc.client import boolean
 
 from .sql_queries import ModelManagerQueries
 from .queryset import QuerySet
@@ -17,25 +18,31 @@ class BaseManager:
     def get_model_class_field_names(self):
         return self.model_class.fields.keys()
     
-    def check_fields(self, fields):
-        for field in fields.keys():
-            if field not in self.get_model_class_field_names():
-                raise Exception(f'Field {field} does not exist in {self.model_class.__name__}')
+    def certify_field_compatibility(self, fields):
+        for field_name, field_value in self.model_class.fields.items():
+            if field_value and not fields.get(field_name):
+                if field_value.null:
+                    fields[field_name] = None
+                if field_value.default or field_value.default == 0 and type(field_value.default) in [int, float]: # is this ugly af ?
+                    fields[field_name] = field_value.default
+                if field_value.blank:
+                    fields[field_name] = ''
+                    
+                # Possible to check for unique? Is it worth to check the db for this? --> Would be a lot of queries...
+
+        for field_name, field_value in fields.items():
+            if field_name not in self.get_model_class_field_names():
+                raise Exception(f'Field {field_name} does not exist in {self.model_class.__name__}')
+            
+            if isinstance(field_value, BaseModel):
+                fields[field_name] = field_value.id
+                
         return True
-    
-    def check_for_foreign_key(self, **kwargs):
-        for key, value in kwargs.items():
-            if isinstance(value, BaseModel):
-                kwargs[key] = value.id
-        return kwargs
             
     def create(self, **kwargs): 
-        if len(kwargs.keys()) < len(self.get_model_class_field_names()) - 1: # -1 for id
-            raise Exception(f'Please provide information for all fields for {self.model_class.__name__}')
-        
-        if self.check_fields(kwargs):
-            
-            kwargs = self.check_for_foreign_key(**kwargs)
+        if self.certify_field_compatibility(kwargs):
+            if len(kwargs.keys()) < len(self.get_model_class_field_names()) - 1: # -1 for id
+                raise Exception(f'Please provide information for all fields for {self.model_class.__name__}')
                 
             if not self.get(**kwargs):
                 query = ModelManagerQueries().create(
@@ -46,19 +53,16 @@ class BaseManager:
                 ExecuteQuery(query).execute()
                 
     def get(self, **kwargs): 
-        if self.check_fields(kwargs):
-            kwargs = self.check_for_foreign_key(**kwargs)
+        if self.certify_field_compatibility(kwargs):
             query = ModelManagerQueries().get(self.get_table_name(), **kwargs)
             return QuerySet(query, self.model_class).create(get_unique=True)
     
     def update(self, **kwargs):
-        if self.check_fields(kwargs):
-            kwargs = self.check_for_foreign_key(**kwargs)
+        if self.certify_field_compatibility(kwargs):
             query = ModelManagerQueries().update(self.get_table_name(), **kwargs)
             ExecuteQuery(query).execute()
   
     def delete(self, **kwargs):
-        kwargs = self.check_for_foreign_key(**kwargs)
         query = ModelManagerQueries().delete(self.get_table_name(), **kwargs)
         ExecuteQuery(query).execute()
 
@@ -70,7 +74,7 @@ class BaseManager:
 class MetaModel(type): 
     """
     The goal of this class meta is to collect the model class attribute names and store them in a dictionary.
-    It also sets the manager and the model field attributes to the BaseModel class.
+    It also sets the manager and the model field attributes to the BaseModel instance.
     
     For example:
         class Person(BaseModel):
@@ -100,9 +104,10 @@ class MetaModel(type):
         # Add model fields to the model 
         
         model_fields_module = importlib.import_module('orm.model_fields')
-        model_fields =  inspect.getmembers(model_fields_module, inspect.isclass)
+        model_fields = inspect.getmembers(model_fields_module, inspect.isclass)
 
-        for name, _class in model_fields:
+        for name, _class in model_fields[1:]: # Remove the BaseField class
+            print(name, _class)
             setattr(new_class, name, _class)
          
 

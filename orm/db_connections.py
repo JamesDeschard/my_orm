@@ -1,3 +1,4 @@
+from concurrent.futures import thread
 import logging
 
 from settings import DB_SETTINGS
@@ -43,7 +44,7 @@ class ExecuteQuery(DBConnectionMixin):
             self.connect()
             
             if DB_SETTINGS.get('db_engine') == 'sqlite3':
-                self.cursor.execute("PRAGMA foreign_keys = 1")
+                self.cursor.execute("PRAGMA foreign_keys = 1")           
             
             self.cursor.execute(self.query)
             self.connection.commit()

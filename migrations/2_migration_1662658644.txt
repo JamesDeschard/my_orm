@@ -1,2 +1,0 @@
-ALTER TABLE author ADD COLUMN surname VARCHAR (255);
- ############## 

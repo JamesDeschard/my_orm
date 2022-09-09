@@ -6,7 +6,7 @@ from .db_connections import ExecuteQuery
 
 class QuerySetSearch:
     """
-    An extension of the QuerySet class that allows for filtering and ordering of the queryset.
+    An extension of the QuerySet class that allows for filtering and ordering.
 
     ...
 
@@ -55,7 +55,7 @@ class QuerySet(QuerySetSearch):
     """
     A class used to represent the result of a Query.
     Queries are evaluated lazily.
-    They don't hit the database until you iterate over them or call them with a method from QuerySetSerach.
+    They don't hit the database until you iterate over them or call them with a method from QuerySetSearch.
 
     ...
 

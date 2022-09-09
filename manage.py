@@ -3,10 +3,10 @@ import sys
 import unittest
 
 import settings
-
 from orm.db_migrations import ExecuteMigrations, PopulateMigrationFile
 from orm.utils import get_current_models, get_db_tables, get_table_columns
-from tests.orm_test import TestCRUD
+from tests.model_fields_test import TestFields
+from tests.orm_base_model_test import TestCRUD
 from tests.queryset_test import TestQuerySets
 
 logging.basicConfig(level=logging.DEBUG)
@@ -30,9 +30,10 @@ def show_db_schema():
 def test():
     if settings.ACTIVATE_TESTING:
         logger.info('Running tests...')
+        migrations = unittest.TestLoader().loadTestsFromTestCase(TestFields)
         crud = unittest.TestLoader().loadTestsFromTestCase(TestCRUD)
         queryset = unittest.TestLoader().loadTestsFromTestCase(TestQuerySets)
-        suite= unittest.TestSuite([crud, queryset])
+        suite= unittest.TestSuite([migrations, crud, queryset])
         runner = unittest.TextTestRunner()
         runner.run(suite)
         logger.info('Tests completed')

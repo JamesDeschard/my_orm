@@ -2,6 +2,11 @@ from orm.orm_base_model import BaseModel
 
 # Add your test models here.
 
+class Person(BaseModel):
+    name = BaseModel.CharField(max_length=50, default='Bob')
+    surname = BaseModel.CharField(max_length=50, null=True)
+    test = BaseModel.CharField(max_length=50, blank=True)
+    age = BaseModel.IntegerField(default=0)
 
 class Author(BaseModel):
     name = BaseModel.CharField(max_length=255)

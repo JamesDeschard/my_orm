@@ -3,6 +3,8 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+BASE_MIGRATION_PATH = os.path.join(BASE_DIR, 'migrations')
+
 DB_SETTINGS = {
     # 'db_engine': 'psycopg2',
     # 'db_settings': {

@@ -1,7 +1,10 @@
 import importlib
 import inspect
+import os
+import time
 
-from settings import DB_SETTINGS, ACTIVATE_TESTING, CURRENT_MODELS
+from settings import (ACTIVATE_TESTING, BASE_MIGRATION_PATH, CURRENT_MODELS,
+                      DB_SETTINGS)
 
 from .db_connections import ExecuteQuery
 from .sql_queries import DbStatusQueriesPostgres, DbStatusQueriesSqlite
@@ -12,6 +15,19 @@ def get_status_query_class():
         return DbStatusQueriesPostgres()
     elif DB_SETTINGS.get('db_engine') == 'sqlite3':
         return DbStatusQueriesSqlite()
+
+
+def check_existence_of_migration_dir():
+    if not os.path.isdir(BASE_MIGRATION_PATH):
+        os.mkdir(BASE_MIGRATION_PATH)
+
+
+def get_migration_file_name():
+    migration_files = os.listdir(BASE_MIGRATION_PATH)
+    if not migration_files:
+        return '0_migration_init.txt'
+    else:
+        return f'{len(migration_files)}_migration_{int(time.time())}.txt'
 
 
 def get_current_models():
