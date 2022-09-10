@@ -1,6 +1,9 @@
 
+from dataclasses import field
 import inspect
 import importlib
+
+from orm.model_fields import ManyToManyField
 
 from .sql_queries import ModelManagerQueries
 from .queryset import QuerySet
@@ -26,8 +29,6 @@ class BaseManager:
                     fields[field_name] = field_value.default
                 if field_value.blank:
                     fields[field_name] = ''
-                    
-                # Possible to check for unique? Is it worth to check the db for this? --> Would be a lot of queries for a simple Exception message
 
         for field_name, field_value in fields.items():
             if field_name not in self.get_model_class_field_names():
@@ -64,6 +65,7 @@ class BaseManager:
             return True
   
     def delete(self, **kwargs):
+        self.certify_field_compatibility(kwargs)
         query = ModelManagerQueries().delete(self.get_table_name(), **kwargs)
         ExecuteQuery(query).execute()
         return True
@@ -96,17 +98,34 @@ class MetaModel(type):
         
         new_class.table_name = name.lower()
         
-        # Create the fields dictionary
+        # Create the fields dictionary and the relation tree between attributes
         
-        field_list = {}
+        relations = ['ForeignKey', 'OneToOneField', 'ManyToManyField']
+        field_list, relation_tree = dict(), dict()
         
         for key, value in attrs.items():
             if not key.startswith('__') and not callable(value):
                 field_list[key] = value
+            if value.__class__.__name__ in relations:
+                new_relation = dict()
+                relation_type = relations[relations.index(value.__class__.__name__)]
+                new_relation[name] = value.model_reference
+                new_relation[value.model_reference.__name__] = new_class
+                new_relation['field_name'] = key
+                relation_tree[relation_type] = new_relation
                 
         if field_list:
             new_class.fields = {**{'id': None}, **field_list}
         
+        new_class.relation_tree = relation_tree
+        
+        # Reciprocate the relation tree to the related models
+        
+        for models in relation_tree.values():
+            for field_name, model in list(models.items())[:-1]: # Exclude 'field_name'
+                if field_name.lower() != name:
+                    setattr(model, 'relation_tree', relation_tree)
+            
         # Set the model manager
         
         new_class.objects = BaseManager(new_class)   
@@ -117,16 +136,17 @@ class MetaModel(type):
         model_fields = inspect.getmembers(model_fields_module, inspect.isclass)
 
         for name, _class in model_fields[1:]: # Remove the BaseField class
+            setattr(_class, 'parent_model', new_class)
             setattr(new_class, name, _class)
-         
+        
         return new_class
-
+    
 
 class BaseModel(metaclass=MetaModel):  
     def __init__(self, **kwargs) -> None:
         for key, value in kwargs.items():
             setattr(self, key, value)
-    
+  
     def __repr__(self):
         attrs_format = ", ".join([f'{field}={value}' for field, value in self.__dict__.items()])
         return f"<{self.__class__.__name__}: [{attrs_format}]>"

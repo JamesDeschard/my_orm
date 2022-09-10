@@ -1,23 +1,7 @@
-import importlib
-
-from .utils import get_class_module
 from .db_connections import ExecuteQuery
 
 
 class QuerySetSearch:
-    """
-    An extension of the QuerySet class that allows for filtering and ordering.
-
-    ...
-
-    Attributes
-    ----------
-
-    Methods
-    -------
-
-    """
-    
     def __init__(self, cached_result) -> None:
         self.cached_result = cached_result
         
@@ -51,35 +35,8 @@ class QuerySetSearch:
         # return self
     
 
-class QuerySet(QuerySetSearch):
-    """
-    A class used to represent the result of a Query.
-    Queries are evaluated lazily.
-    They don't hit the database until you iterate over them or call them with a method from QuerySetSearch.
+class QuerySet(QuerySetSearch):  
 
-    ...
-
-    Attributes
-    ----------
-    query : str
-        The query to be executed
-    model_class : class
-        The model class to be used to create the queryset
-
-    Methods
-    -------
-    check_for_relation(self)
-        Checks wether the model has a foreign key relation.
-        If it does, returns the field name and the relations model class.
-    
-    create(self, get_unique=False)
-        Caches the query. If get_unique is True, it executes the query and returns the first result.
-        Otherwise, it returns itself.
-        
-    hit_db(self)
-        Executes the query and appends the results to the queryset.
-    """
-    
     def __init__(self, query, model_class) -> None:
         super().__init__(cached_result=str())
         self.query = query
@@ -106,13 +63,17 @@ class QuerySet(QuerySetSearch):
         return self.queryset[index]
     
     def check_for_relation(self):
-        for field_name, field_value in self.model_class.fields.items():
-            if field_value.__class__.__name__ == 'ForeignKey':
-                module = get_class_module(field_name)
-                foreignkey = importlib.import_module(module)
-                foreignkey = getattr(foreignkey, field_name.capitalize())
-                return field_name, foreignkey
-        return False, False
+        relations = ['ForeignKey', 'OneToOneField', 'ManyToManyField'] 
+        for relation in relations:
+            related_model = self.model_class.relation_tree.get(relation)
+            if related_model:
+                field_name = related_model.get('field_name')
+                related_model = {f: c for f, c in list(related_model.items())[:1] if c != self.model_class}
+                if field_name and related_model:
+                    foreign_key_field, foreign_key_model = map(lambda x: x[0], zip(*related_model.items()))
+                    return field_name, foreign_key_field, foreign_key_model
+                    
+        return False, False, False
 
     def build(self, get_unique=False) -> list: 
         if not self.cached_result:
@@ -121,7 +82,6 @@ class QuerySet(QuerySetSearch):
         if get_unique:
             self.hit_db()
             return self.queryset[0] if self.queryset else None
-        
         else:
             return self
 
@@ -134,10 +94,9 @@ class QuerySet(QuerySetSearch):
         
         for q in query:
             obj_attrs = dict()
-            foreign_key_field, foreign_key_model = self.check_for_relation()
-            
+            field_name, foreign_key_field, foreign_key_model = self.check_for_relation()
             for key, value in zip(self.model_class.fields.keys(), q):
-                if foreign_key_field and key == foreign_key_field:
+                if foreign_key_field and key == field_name:
                     obj_attrs[key] = foreign_key_model.objects.get(id=value)
                 else:
                     obj_attrs[key] = value

@@ -43,12 +43,6 @@ def get_current_models():
     return classes
 
 
-def get_class_module(field_name):
-        for _attr, _class in get_current_models().items():
-            if _attr.lower() == field_name:
-                return _class.__module__
-
-
 def get_db_tables():
     query_class = get_status_query_class()
     query = ExecuteQuery(query_class.get_all_tables_query()).execute(read=True)

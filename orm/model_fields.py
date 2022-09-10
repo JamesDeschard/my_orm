@@ -7,7 +7,7 @@ class BaseField:
     unique = False
     
     def __init__(self, **kwargs) -> None:
-       for key, value in kwargs.items():
+        for key, value in kwargs.items():
             if key in filter(lambda x: self.check_valid_attribute(x), dir(self)):
                 setattr(self, key, value)
             else:
@@ -28,14 +28,14 @@ class BaseField:
         return query
 
 
-class ForeignKey(BaseField):
+class OneToOneField(BaseField):
     def __init__(self, model_reference, on_delete=None, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.model_reference = model_reference.table_name
+        self.model_reference = model_reference
         self.on_delete = on_delete
 
     def create_migration(self):
-        query = f'INTEGER REFERENCES {self.model_reference} (id)'
+        query = f'INTEGER UNIQUE REFERENCES {self.model_reference.table_name} (id)'
         if self.on_delete:
             query += f' ON DELETE {self.on_delete}'
             
@@ -45,6 +45,50 @@ class ForeignKey(BaseField):
     def __str__(self) -> str:
         return self.create_migration()
 
+
+class ForeignKey(BaseField):
+    def __init__(self, model_reference, on_delete=None, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.model_reference = model_reference
+        self.on_delete = on_delete
+
+    def create_migration(self):
+        query = f'INTEGER REFERENCES {self.model_reference.table_name} (id)'
+        if self.on_delete:
+            query += f' ON DELETE {self.on_delete}'
+            
+        query = self.add_default_fields_to_migration(query)
+        return query
+    
+    def __str__(self) -> str:
+        return self.create_migration()
+
+
+class ManyToManyField(BaseField):
+    def __init__(self, model_reference, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.model_reference = model_reference
+
+    def create_migration(self):
+        query = f'INTEGER REFERENCES {self.model_reference.table_name} (id)'
+        query = self.add_default_fields_to_migration(query)        
+        return query
+
+    def create_new_table(self, parent_model):
+        return f""" CREATE TABLE IF NOT EXISTS {self.model_reference.table_name}_{parent_model.lower()} 
+                    (id INTEGER PRIMARY KEY, 
+                    {self.model_reference.table_name}_id INTEGER REFERENCES {self.model_reference.table_name} (id), 
+                    {parent_model.lower()}_id INTEGER REFERENCES {parent_model.lower()} (id)) """
+    
+    def get_relation(self):        
+        for value in self.model_reference.relation_tree.values():
+            for model_name, model_class in value.items():
+                if model_class == self.model_reference:
+                    return model_name
+            
+    def __str__(self) -> str:
+        return self.create_migration()
+    
 
 # TEXT TYPES
 

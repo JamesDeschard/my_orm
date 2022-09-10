@@ -33,7 +33,7 @@ class MigrationQueries:
     def create_table(self, table_name, fields):
         return f""" CREATE TABLE IF NOT EXISTS {table_name} 
                     (id {self.engine_type_var('sqlite3', 'INTEGER', 'SERIAL')} PRIMARY KEY,
-                    {",".join(fields)});"""
+                    {", ".join(fields)});"""
     
     def add_column(self, table_name, column_name, column_definition):
         return f'ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition};'
