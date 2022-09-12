@@ -1,4 +1,5 @@
 import logging
+from sqlite3 import TimeFromTicks
 import unittest
 
 from .test_models import *
@@ -14,16 +15,16 @@ def create_author():
 
 class TestCRUD(unittest.TestCase):
     
-    # def test_create(self):
-    #     create_author()
-    #     author = Author.objects.get(name='John', surname='Doe')
-    #     self.assertEqual(author.name, 'John')
-    #     self.assertEqual(author.surname, 'Doe')
+    def test_create(self):
+        create_author()
+        author = Author.objects.get(name='John', surname='Doe')
+        self.assertEqual(author.name, 'John')
+        self.assertEqual(author.surname, 'Doe')
 
-    # def test_delete(self):
-    #     author = Author.objects.get(name='John').delete()
-    #     author = Author.objects.get(name='John')
-    #     self.assertEqual(author, None)
+    def test_delete(self):
+        author = Author.objects.get(name='John').delete()
+        author = Author.objects.get(name='John')
+        self.assertEqual(author, None)
     
     def test_foreign_key(self):
         create_author()
@@ -59,19 +60,41 @@ class TestCRUD(unittest.TestCase):
         # Making a second passport will call a UNIQUE constraint violation
 
     def test_many_to_man(self):
-        print('TEST')
- 
-    # def test_update(self):
-    #     create_author()
-    #     author = Author.objects.get(name='John')
-    #     author.update(name='Jane')
-    #     author = Author.objects.get(name='Jane')
-    #     self.assertEqual(author.name, 'Jane')
+        Student(name='David').save()
+        Student(name='James').save()
+        Student(name='Charles').save()
 
-    #     author.name = 'John'
-    #     author.update()
-    #     self.assertEqual(author.name, 'John')
-    #     author.delete() 
+        Course(title='Python').save()
+        # Course(title='C#').save()
+        # Course(title='Java').save()
+        student_1 = Student.objects.get(name='David')
+        student_2 = Student.objects.get(name='James')
+        student_3 = Student.objects.get(name='Charles')
+        
+        course_1 = Course.objects.get(title='Python')
+        
+
+        course_1.students.add(student_1, student_2, student_3)
+        
+        self.assertEqual(len(list(course_1.students.all())), 3)
+        
+        for s in Student.objects.all():
+            s.delete()
+        
+        for c in Course.objects.all():
+            c.delete()
+        
+    def test_update(self):
+        create_author()
+        author = Author.objects.get(name='John')
+        author.update(name='Jane')
+        author = Author.objects.get(name='Jane')
+        self.assertEqual(author.name, 'Jane')
+
+        author.name = 'John'
+        author.update()
+        self.assertEqual(author.name, 'John')
+        author.delete() 
     
     pass
 

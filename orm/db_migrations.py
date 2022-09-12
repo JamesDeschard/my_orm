@@ -36,10 +36,22 @@ class MakeMigration:
         return MigrationQueries().drop_table(self.table_name)
     
     def create_table(self):
-        return MigrationQueries().create_table(
-                self.table_name, 
-                [f'{key} {value.create_migration()}' for key, value in self.fields.items() if key != 'id']
-        )
+        query, junction_table_query = list(), str()
+        for f, c in self.fields.items():
+            if f != 'id':
+                if c.__class__.__name__ != 'ManyToManyField':
+                    query.append(f'{f} {c.create_migration()}')
+                else:
+                    junction_table_query += c.create_migration(self.table_name, c.__class__.__name__)
+        
+        query = MigrationQueries().create_table(self.table_name, query)
+                
+        if junction_table_query:
+            query += QUERY_SEPARATOR + junction_table_query
+        
+        return query
+        
+        
     
     def update_table(self, table_name, column, action_type):
         if action_type == 'add':
@@ -48,7 +60,6 @@ class MakeMigration:
         
         elif action_type == 'remove':
             return MigrationQueries().remove_column(table_name, column)
-
 
 class PopulateMigrationFile:
     current_db_tables = get_db_tables()

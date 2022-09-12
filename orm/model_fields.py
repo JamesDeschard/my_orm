@@ -26,7 +26,9 @@ class BaseField:
         if self.unique:
             query += ' UNIQUE '
         return query
-
+    
+    def is_referenced(self):
+        return False
 
 class OneToOneField(BaseField):
     def __init__(self, model_reference, on_delete=None, **kwargs) -> None:
@@ -37,7 +39,7 @@ class OneToOneField(BaseField):
     def create_migration(self):
         query = f'INTEGER UNIQUE REFERENCES {self.model_reference.table_name} (id)'
         if self.on_delete:
-            query += f' ON DELETE {self.on_delete}'
+            query += f' ON DELETE {self.on_delete} '
             
         query = self.add_default_fields_to_migration(query)
         return query
@@ -55,7 +57,7 @@ class ForeignKey(BaseField):
     def create_migration(self):
         query = f'INTEGER REFERENCES {self.model_reference.table_name} (id)'
         if self.on_delete:
-            query += f' ON DELETE {self.on_delete}'
+            query += f' ON DELETE {self.on_delete} '
             
         query = self.add_default_fields_to_migration(query)
         return query
@@ -65,29 +67,26 @@ class ForeignKey(BaseField):
 
 
 class ManyToManyField(BaseField):
-    def __init__(self, model_reference, **kwargs) -> None:
+    def __init__(self, model_reference, on_delete=None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.model_reference = model_reference
-
-    def create_migration(self):
-        query = f'INTEGER REFERENCES {self.model_reference.table_name} (id)'
-        query = self.add_default_fields_to_migration(query)        
-        return query
-
-    def create_new_table(self, parent_model):
+        self.on_delete = on_delete
+        
+    
+    def create_migration(self, parent_model, field):
+        related_fields = self.model_reference.relation_tree[field]
+        parent_model = list(filter(lambda x: x.lower() == parent_model, related_fields.keys()))[0]
         return f""" CREATE TABLE IF NOT EXISTS {self.model_reference.table_name}_{parent_model.lower()} 
                     (id INTEGER PRIMARY KEY, 
-                    {self.model_reference.table_name}_id INTEGER REFERENCES {self.model_reference.table_name} (id), 
-                    {parent_model.lower()}_id INTEGER REFERENCES {parent_model.lower()} (id)) """
+                    {self.model_reference.table_name}_id INTEGER REFERENCES {self.model_reference.table_name} (id) ON DELETE {self.on_delete}, 
+                    {parent_model.lower()}_id INTEGER REFERENCES {parent_model.lower()} (id) ON DELETE {self.on_delete}) """
     
     def get_relation(self):        
         for value in self.model_reference.relation_tree.values():
             for model_name, model_class in value.items():
                 if model_class == self.model_reference:
                     return model_name
-            
-    def __str__(self) -> str:
-        return self.create_migration()
+
     
 
 # TEXT TYPES
@@ -99,7 +98,7 @@ class CharField(BaseField):
         self.max_length = max_length
     
     def create_migration(self) -> str:
-        query =  f'VARCHAR ({self.max_length})'
+        query =  f'VARCHAR ({self.max_length}) '
         query = self.add_default_fields_to_migration(query)
         return query
     
@@ -111,7 +110,7 @@ class TextField(BaseField):
         super().__init__(**kwargs)
     
     def create_migration(self) -> str:
-        query =  'TEXT'
+        query =  ' TEXT '
         query = self.add_default_fields_to_migration(query)
         return query
     
@@ -139,7 +138,7 @@ class BooleanField(BaseField):
         super().__init__(**kwargs)
     
     def create_migration(self) -> str:
-        query = 'boolean'
+        query = ' BOOLEAN '
         query = self.add_default_fields_to_migration(query)
         return query
     

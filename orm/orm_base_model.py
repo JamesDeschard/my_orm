@@ -1,13 +1,11 @@
-
-from dataclasses import field
+import copy
 import inspect
 import importlib
 
-from orm.model_fields import ManyToManyField
-
 from .sql_queries import ModelManagerQueries
-from .queryset import QuerySet
+from .queryset import QuerySet, RelationManager
 from .db_connections import ExecuteQuery
+
 
 
 class BaseManager:  
@@ -25,25 +23,29 @@ class BaseManager:
             if field_value and not fields.get(field_name):
                 if field_value.null:
                     fields[field_name] = None
-                if field_value.default or type(field_value.default) == int: # is this ugly af, other way of avoiding edge case (default=0) ? try except?
+                if field_value.default or type(field_value.default) == int: 
                     fields[field_name] = field_value.default
                 if field_value.blank:
                     fields[field_name] = ''
 
-        for field_name, field_value in fields.items():
+        for field_name, field_value in copy.copy(fields).items(): 
             if field_name not in self.get_model_class_field_names():
                 raise Exception(f'Field {field_name} does not exist in {self.model_class.__name__}')
-            
+               
             if isinstance(field_value, BaseModel):
                 fields[field_name] = field_value.id
-                
+            
+            if isinstance(field_value, RelationManager):
+                fields.pop(field_name)
+
         return True
             
     def create(self, **kwargs): 
         if self.certify_field_compatibility(kwargs):
             if len(kwargs.keys()) < len(self.get_model_class_field_names()) - 1: # -1 for id
-                raise Exception(f'Please provide information for all fields for {self.model_class.__name__}')
-                
+                if not self.model_class.relation_tree.get('ManyToManyField'):
+                    raise Exception(f'Please provide information for all fields for {self.model_class.__name__}')
+
             if not self.get(**kwargs):
                 query = ModelManagerQueries().create(
                     self.get_table_name(), 
@@ -51,7 +53,6 @@ class BaseManager:
                     ', '.join([f"'{value}'" for value in kwargs.values()])
                 )
                 ExecuteQuery(query).execute()
-                return True
                 
     def get(self, **kwargs): 
         if self.certify_field_compatibility(kwargs):
@@ -62,15 +63,13 @@ class BaseManager:
         if self.certify_field_compatibility(kwargs):
             query = ModelManagerQueries().update(self.get_table_name(), **kwargs)
             ExecuteQuery(query).execute()
-            return True
   
     def delete(self, **kwargs):
         self.certify_field_compatibility(kwargs)
         query = ModelManagerQueries().delete(self.get_table_name(), **kwargs)
         ExecuteQuery(query).execute()
-        return True
 
-    def all(self) -> None:
+    def all(self):
         query = ModelManagerQueries().get_all_columns(self.get_table_name())
         return QuerySet(query, self.model_class).build()  
 
@@ -136,7 +135,6 @@ class MetaModel(type):
         model_fields = inspect.getmembers(model_fields_module, inspect.isclass)
 
         for name, _class in model_fields[1:]: # Remove the BaseField class
-            setattr(_class, 'parent_model', new_class)
             setattr(new_class, name, _class)
         
         return new_class

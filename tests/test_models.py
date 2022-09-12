@@ -2,11 +2,11 @@ from orm.orm_base_model import BaseModel
 
 # Add your test models here.
 
-# class Person(BaseModel):
-#     name = BaseModel.CharField(max_length=50, default='Bob')
-#     surname = BaseModel.CharField(max_length=50, null=True)
-#     test = BaseModel.CharField(max_length=50, blank=True)
-#     age = BaseModel.IntegerField(default=0)
+class Person(BaseModel):
+    name = BaseModel.CharField(max_length=50, default='Bob')
+    surname = BaseModel.CharField(max_length=50, null=True)
+    test = BaseModel.CharField(max_length=50, blank=True)
+    age = BaseModel.IntegerField(default=0)
 
 
 class PassPortOwner(BaseModel):
@@ -28,13 +28,13 @@ class Book(BaseModel):
     author = BaseModel.ForeignKey(Author, on_delete='CASCADE')
     
 
-# class Student(BaseModel):
-#     name = BaseModel.CharField(max_length=255)
+class Student(BaseModel):
+    name = BaseModel.CharField(max_length=255)
 
 
-# class Course(BaseModel):
-#     title = BaseModel.CharField(max_length=255)
-#     courses = BaseModel.ManyToManyField(Student)
+class Course(BaseModel):
+    title = BaseModel.CharField(max_length=255)
+    students = BaseModel.ManyToManyField(Student, on_delete='CASCADE')
 
 
 
