@@ -1,7 +1,10 @@
+import copy
+import inspect
+
 from .db_connections import ExecuteQuery
+from .utils import get_relation_classes_without_relation_fields, relations
 
-
-RELATIONS = ['ForeignKey', 'OneToOneField', 'ManyToManyField'] 
+RELATIONS = relations()
 
 
 class QuerySetSearch:
@@ -38,35 +41,61 @@ class QuerySetSearch:
         # return self
     
     
-class RelationManager:    
+class FieldRelationManager:    
     def __init__(self, id, r_1, r_2, r_tree) -> None:
         self.r_1_id = id
         self.r_1 = r_1
         self.r_2 = r_2
-        self.r_tree = r_tree
-        self.table_name = f'{self.r_1.lower()}_{self.r_2.lower()}'
         
+        self.relation_class = r_tree.get(self.r_2)
+        self.table_name = f'{self.r_1.lower()}_{self.r_2.lower()}'
+    
+    def insertion_query(self, obj):
+        return f""" INSERT INTO {self.table_name} ({self.r_1.lower()}_id, {self.r_2.lower()}_id) 
+                    VALUES ({obj.id}, {self.r_1_id});"""
+    
     def add(self, *args):
-        for obj in args:
-            query = f"""INSERT INTO {self.table_name} 
-                        ({self.r_1.lower()}_id, {self.r_2.lower()}_id) 
-                        VALUES ({obj.id}, {self.r_1_id});"""
-            ExecuteQuery(query).execute()
+        return list(map(lambda q: ExecuteQuery(self.insertion_query(q)).execute(), args))
 
     def all(self):
-        # Get all sutdents from student_class table
-        relationship_class = self.r_tree.get(self.r_2)
-        relationship_rows = f', {self.r_1.lower()}.'.join(relationship_class.fields.keys())
+        relationship_rows = f', {self.r_1.lower()}.'.join(self.relation_class.fields.keys())
         
         query = f"""SELECT {self.r_1.lower()}.{relationship_rows} 
-                    FROM {self.r_1.lower()} 
-                    LEFT JOIN {self.table_name} ON {self.r_1.lower()}.id = {self.table_name}.{self.r_1.lower()}_id"""
-        return QuerySet(query, relationship_class).build()
+                    FROM {self.table_name}
+                    INNER JOIN {self.r_1.lower()} ON {self.r_1.lower()}.id = {self.table_name}.{self.r_1.lower()}_id
+                    WHERE {self.table_name}.{self.r_2.lower()}_id = {self.r_1_id};"""    
+        return QuerySet(query, self.relation_class).build()
 
+    def create(self, **kwargs):
+        self.relation_class.objects.create(**kwargs)
+        get_created_class = self.relation_class.objects.get(**kwargs)
+        self.add(get_created_class)
+        return True
+
+
+class NoFieldRelationManager:
+    def __init__(self, model_class, id) -> None:
+        self.r_1 = model_class
+        self.r_2 = self.get_relations()
+        self.id = id
+        self.table_name = f'{self.r_1.__name__.lower()}_{self.r_2.__name__.lower()}'
         
+    def get_relations(self):
+        for relations in self.r_1.relation_tree.values():
+            for relation in relations.values():
+                if inspect.isclass(relation) and relation != self.r_1:
+                    return relation
+ 
+    def all(self):
+        relationship_rows = f', {self.r_2.__name__.lower()}.'.join(list(self.r_2.fields.keys())[:-1])
+        
+        query = f"""SELECT {self.r_2.__name__.lower()}.{relationship_rows} 
+                    FROM {self.table_name}
+                    INNER JOIN {self.r_2.__name__.lower()} ON {self.r_2.__name__.lower()}.id = {self.table_name}.{self.r_2.__name__.lower()}_id
+                    WHERE {self.table_name}.{self.r_1.__name__.lower()}_id = {self.id};"""
+        
+        return QuerySet(query, self.r_2).build()   
     
-    def create(self, *args, **kwargs):
-        pass
     
 class QuerySet(QuerySetSearch):  
 
@@ -77,7 +106,7 @@ class QuerySet(QuerySetSearch):
         
         self.queryset = list()
         self.index = 0
-
+        
     def __iter__(self):
         self.hit_db()
         return self
@@ -121,32 +150,54 @@ class QuerySet(QuerySetSearch):
 
     def hit_db(self):
         query = ExecuteQuery(self.cached_result).execute(read=True)
+        relation_classes_without_relation_fields = get_relation_classes_without_relation_fields()
+        
         if not query:
             return
         
         self.queryset = list()
-        
-        for i, q in enumerate(query):
-            if len(self.model_class.fields.keys()) != len(query[0]):
-                query[i] = q  + ('ManyToManyField',)
 
-        for q in query:
+        for i, q in copy.copy(enumerate(query)):
+            if len(self.model_class.fields.keys()) != len(query[i]):
+                query[i] = q  + (RELATIONS[-1],)
+                
             obj_attrs = dict()
+            additional_field = dict()
+            
             field_name, foreign_key_field, foreign_key_model = self.check_for_relation()
 
-            for key, value in zip(self.model_class.fields.keys(), q):
+            for key, value in zip(self.model_class.fields.keys(), query[i]):
                     
                 if foreign_key_field and key == field_name:
-                    if value == 'ManyToManyField':
-                        r_tree = self.model_class.relation_tree.get('ManyToManyField')
+                    if value == RELATIONS[-1]:
+                        r_tree = self.model_class.relation_tree.get(RELATIONS[-1])
                         id = obj_attrs.get('id')
                         r_2, r_1 = list(r_tree.keys())[:-1]
-                        obj_attrs[key] = RelationManager(id, r_1, r_2, r_tree)
+                        obj_attrs[key] = FieldRelationManager(id, r_1, r_2, r_tree)
                     else:
-                        obj_attrs[key] = foreign_key_model.objects.get(id=value)
+                        obj_attrs[key] = foreign_key_model.objects.get(id=value)  
+                        
+                elif self.model_class in relation_classes_without_relation_fields: 
+                    
+                    obj_attrs[key] = value 
+                    is_many_to_many = next(iter(self.model_class.relation_tree)) == RELATIONS[-1]
+                    
+                    if not additional_field and is_many_to_many:
+                        relations = self.model_class.relation_tree.get(RELATIONS[-1])
+                        # This third loop never has a length > 2
+                        for _class in list(relations.values())[:-1]:
+                            if _class not in relation_classes_without_relation_fields:
+                                manager_name = _class.__name__.lower() + '_set'
+                                if not additional_field.get(manager_name):
+                                    id = obj_attrs.get('id')
+                                    additional_field[manager_name] = NoFieldRelationManager(self.model_class, id)
+                    
                 else:
                     obj_attrs[key] = value
                     
+            if additional_field:
+                obj_attrs = {**obj_attrs, **additional_field}
+                
             self.queryset.append(self.model_class(**obj_attrs))
                     
             

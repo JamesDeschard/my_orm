@@ -1,5 +1,7 @@
+import copy
 import importlib
 import inspect
+import itertools
 import os
 import time
 
@@ -11,6 +13,9 @@ from .sql_queries import DbStatusQueriesPostgres, DbStatusQueriesSqlite
 
 
 def get_status_query_class():
+    """
+    Gets the BdQuery class corresponding to the database engine.
+    """
     if DB_SETTINGS.get('db_engine') == 'psycopg2':
         return DbStatusQueriesPostgres()
     elif DB_SETTINGS.get('db_engine') == 'sqlite3':
@@ -18,11 +23,17 @@ def get_status_query_class():
 
 
 def check_existence_of_migration_dir():
+    """
+    Creates a migration directory if it does not exist.
+    """
     if not os.path.isdir(BASE_MIGRATION_PATH):
         os.mkdir(BASE_MIGRATION_PATH)
 
 
 def get_migration_file_name():
+    """
+    Set the current migration file name.
+    """
     migration_files = os.listdir(BASE_MIGRATION_PATH)
     if not migration_files:
         return '0_migration_init.txt'
@@ -31,6 +42,10 @@ def get_migration_file_name():
 
 
 def get_current_models():
+    """
+    This function returns a dictionary containing all the classes defined in the
+    CURRENT_MODELS list set in the settings.py file.
+    """
     if ACTIVATE_TESTING:
         CURRENT_MODELS.append('tests.test_models')
     
@@ -43,7 +58,55 @@ def get_current_models():
     return classes
 
 
+def has_relationship(class_name):  
+    """
+    This function returns True if the class has a ManyToMany or a ForeignKey field.
+    """
+    if hasattr(class_name, 'relation_tree'):
+        if 'ManyToManyField' in class_name.relation_tree:
+            return True
+        elif 'ForeignKey' in class_name.relation_tree:
+            return True
+    return False
+
+
+def relations():
+    return ['ForeignKey', 'OneToOneField', 'ManyToManyField'] 
+
+
+def get_relation_classes_without_relation_fields():
+    """
+    This class returns a set containing all the classes that have a relation
+    but which do not have a relation field in their class definition.
+    """
+
+    related_classes = set()
+    relations_fields = set()
+    
+    models = get_current_models()
+    related_models = list()
+    for _class in models.values():
+        if has_relationship(_class):
+            relation = next(iter(_class.relation_tree))
+            r_m = _class.relation_tree.get(relation)
+            relations_fields.add(copy.copy(r_m).popitem()[1])
+            related_models.append(list(r_m.values()))
+
+    related_models = set(itertools.chain.from_iterable(related_models))
+    
+    for model in related_models:
+        if inspect.isclass(model):
+            difference = relations_fields - set(model.fields.keys())
+            if difference == relations_fields:
+                related_classes.add(model)
+            
+    return related_classes
+
+
 def get_db_tables():
+    """
+    Returns a list of all the tables in the database.
+    """
     query_class = get_status_query_class()
     query = ExecuteQuery(query_class.get_all_tables_query()).execute(read=True)
     tables = list(map(lambda x: x[0], query))
@@ -51,6 +114,9 @@ def get_db_tables():
 
 
 def get_table_columns(table_name):
+    """
+    Returns a list of all the columns in a table.
+    """
     query_class = get_status_query_class()
     query = ExecuteQuery(query_class.get_table_columns_query(table_name)).execute(read=True)
     columns = list(map(lambda x: x[0] if type(x[0]) == str else x[1], query))

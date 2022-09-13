@@ -4,9 +4,11 @@ import unittest
 
 import settings
 from orm.db_migrations import ExecuteMigrations, PopulateMigrationFile
-from orm.utils import get_current_models, get_db_tables, get_table_columns
+from orm.utils import (get_current_models, get_db_tables,
+                       get_relation_classes_without_relation_fields,
+                       get_table_columns)
 from tests.model_fields_test import TestFields
-from tests.orm_base_model_test import TestCRUD
+from tests.orm_base_model_test import TestCRUD, TestRelations
 from tests.queryset_test import TestQuerySets
 
 logging.basicConfig(level=logging.DEBUG)
@@ -32,8 +34,10 @@ def test():
         logger.info('Running tests...')
         migrations = unittest.TestLoader().loadTestsFromTestCase(TestFields)
         crud = unittest.TestLoader().loadTestsFromTestCase(TestCRUD)
+        relations = unittest.TestLoader().loadTestsFromTestCase(TestRelations)
         queryset = unittest.TestLoader().loadTestsFromTestCase(TestQuerySets)
-        suite= unittest.TestSuite([migrations, crud, queryset])
+        
+        suite= unittest.TestSuite([migrations, crud, queryset, relations])
         runner = unittest.TextTestRunner()
         runner.run(suite)
         logger.info('Tests completed')
@@ -42,6 +46,7 @@ def test():
 
 
 if __name__ == '__main__':
+    
     if len(sys.argv) > 1:
         manager_arg = sys.argv[1]
         if manager_arg == 'migrate':
@@ -53,7 +58,8 @@ if __name__ == '__main__':
             logger.info(f'{get_current_models()}')
         elif manager_arg == 'test':
             test()
-            
+        elif manager_arg == 'relations':
+            print(get_relation_classes_without_relation_fields())
         else:
             sys.stdout.write("Invalid command")
     else:

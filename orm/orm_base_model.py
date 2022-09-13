@@ -1,11 +1,11 @@
 import copy
-import inspect
 import importlib
+import inspect
 
-from .sql_queries import ModelManagerQueries
-from .queryset import QuerySet, RelationManager
 from .db_connections import ExecuteQuery
-
+from .queryset import NoFieldRelationManager, QuerySet, FieldRelationManager
+from .sql_queries import ModelManagerQueries
+from .utils import get_relation_classes_without_relation_fields
 
 
 class BaseManager:  
@@ -30,12 +30,16 @@ class BaseManager:
 
         for field_name, field_value in copy.copy(fields).items(): 
             if field_name not in self.get_model_class_field_names():
-                raise Exception(f'Field {field_name} does not exist in {self.model_class.__name__}')
+                if self.model_class not in get_relation_classes_without_relation_fields():
+                    raise Exception(f'Field {field_name} does not exist in {self.model_class.__name__}')
                
             if isinstance(field_value, BaseModel):
                 fields[field_name] = field_value.id
             
-            if isinstance(field_value, RelationManager):
+            if isinstance(field_value, FieldRelationManager):
+                fields.pop(field_name)
+            
+            if isinstance(field_value, NoFieldRelationManager):
                 fields.pop(field_name)
 
         return True
@@ -61,35 +65,18 @@ class BaseManager:
     
     def update(self, **kwargs):
         if self.certify_field_compatibility(kwargs):
-            query = ModelManagerQueries().update(self.get_table_name(), **kwargs)
-            ExecuteQuery(query).execute()
+            ExecuteQuery(ModelManagerQueries().update(self.get_table_name(), **kwargs)).execute()
   
     def delete(self, **kwargs):
         self.certify_field_compatibility(kwargs)
-        query = ModelManagerQueries().delete(self.get_table_name(), **kwargs)
-        ExecuteQuery(query).execute()
+        ExecuteQuery(ModelManagerQueries().delete(self.get_table_name(), **kwargs)).execute()
 
     def all(self):
         query = ModelManagerQueries().get_all_columns(self.get_table_name())
         return QuerySet(query, self.model_class).build()  
 
 
-class MetaModel(type): 
-    """
-    MetaModel is a metaclass, which means that it is a class that creates classes.
-    The goal is to collect the model class attribute names and store them in a dictionary.
-    
-    It also sets the corresponding table name, the manager and the model field attributes.
-    
-    Example:
-    
-        class Person(BaseModel):
-            name = BaseModel.CharField(max_length=50)
-    
-    In this case, the fields dictionary will be {'name': class <orm.model_fields.CharField>}
-    These pythonic gymnasitcs help later down the road to create the database tables.
-    """
-    
+class MetaModel(type):     
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
         

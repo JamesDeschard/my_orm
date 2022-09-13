@@ -24,6 +24,9 @@ class DbStatusQueriesSqlite:
     
     def get_table_columns_query(self, table_name):
         return f""" PRAGMA table_info({table_name})"""
+    
+    def get_table_column_detail_query(self, table_name, column_name):
+        return f""" SELECT * from {table_name} WHERE {column_name} = ?; """
 
     
 class MigrationQueries:
