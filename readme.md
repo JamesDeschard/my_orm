@@ -31,6 +31,33 @@ Once you have defined your models, you need to tell the ORM you’re going to us
 You must also specify your database settings in the `DB_SETTINGS` variable. If you connect using SQLite the database will be automatically created on your first migration.
 Run `python manage.py migrate` to generate the SQL and create your database.
 
+### The model manager
+
+All model objects have a manager called `òbjects`.
+You can use the manager to access model objects methods (CRUD and retrieve all).
+For example:
+
+``` python
+Author.objects.get(**kwargs)
+Author.objects.create(**kwargs)
+Autho.objects.delete(**kwargs)
+
+john = Author.objects.get(name='John')
+john.objects.update(**kwargs)
+
+Author.objects.all()
+```
+
+For the sake of simplicity some of these methods can directly be accessed from the ``BaseModel`` object as well as through the ``BaseModel.BaseManager`` class.
+
+``` python
+bob = Author(name='Bob').save
+bob.save()
+bob.update(name='bobby')
+bob.delete()
+
+```
+
 ## Modify your models
 
 TO DO.
