@@ -14,7 +14,7 @@ class Author(BaseModel):
     surname = BaseModel.CharField(max_length=255)
 ```
 
-`first_name` and `last_name` are fields of the model. Each field is specified as a class attribute, and each attribute maps to a database column.
+`name` and `surname` are fields of the model. Each field is specified as a class attribute, and each attribute maps to a database column.
 Will generate the following SQL code:
 
 ``` sql
