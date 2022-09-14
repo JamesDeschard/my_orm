@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS author (
 
 ## Using models
 
-Once you have defined your models, you need to tell the ORM you’re going to use those models. Do this by editing your settings file and changing the `CURRENT_MODELS` setting to add the name of the module that contains your models.py.
+Once you have defined your models, you need to tell the ORM you’re going to use those models. Do this by editing your settings file and changing the `CURRENT_MODELS` setting to add the name your models file.
 You must also specify your database settings in the `DB_SETTINGS` variable. If you connect using SQLite the database will be automatically created on your first migration.
 Run `python manage.py migrate` to generate the SQL and create your database.
 
