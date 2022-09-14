@@ -3,6 +3,9 @@ import logging
 
 from .test_models import *
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger('TESTING')
+
 class TestFields(unittest.TestCase):
     def test_null(self):
         person = Person().save()
@@ -20,4 +23,7 @@ class TestFields(unittest.TestCase):
                 self.assertEquals(person.surname, None) # Default null
                 
             person.delete()
+    
+    logger.info('TestFields.test_null() ----> \u2713')
+        
             

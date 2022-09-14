@@ -6,7 +6,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('CONNECT')
 
 
-class DBConnectionMixin:
+class DataBaseConnection:
     """
     This class is used to create a connection to the database.
     """
@@ -36,7 +36,7 @@ class DBConnectionMixin:
             self.connection.close()
 
 
-class ExecuteQuery(DBConnectionMixin):
+class ExecuteQuery(DataBaseConnection):
     """
     A utility mixin to execute queries to the db.
     """

@@ -105,18 +105,6 @@ class CharField(BaseField):
     def __str__(self) -> str:
         return self.create_migration()
 
-class TextField(BaseField):
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
-    
-    def create_migration(self) -> str:
-        query =  ' TEXT '
-        query = self.add_default_fields_to_migration(query)
-        return query
-    
-    def __str__(self) -> str:
-        return self.create_migration()
-
 
 # NUMERIC TYPES
 

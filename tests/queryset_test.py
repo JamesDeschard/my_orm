@@ -1,3 +1,4 @@
+import logging
 import random
 import string
 import unittest
@@ -5,12 +6,15 @@ import unittest
 from .test_models import *
 
 
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger('TESTING')
+
+
 def get_random_name(length):
     return ''.join(random.choice(string.ascii_letters).capitalize() for i in range(length))
 
         
 class TestQuerySets(unittest.TestCase):  
-    pass
     def test_all(self):  
         for i in Author.objects.all():
                 i.delete()
@@ -50,6 +54,7 @@ class TestQuerySets(unittest.TestCase):
         for author in Author.objects.all():
             author.delete()
         
+        logger.info('TestQuerySets.test_all() ----> \u2713')
         
 if __name__ == '__main__':  
     unittest.main()
