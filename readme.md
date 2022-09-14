@@ -191,7 +191,7 @@ print(list(course_1.students.all()))
 A `QuerySet` object is returned by the manager (base manager or relation manager) `all()` methods.
 For example:
 
-```` python
+``` python
 Author(name='John', surname='Doe').save()
 Author(name='Jane', surname='Doe').save()
 Author(name='James', surname='Deschard').save()
