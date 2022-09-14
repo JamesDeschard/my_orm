@@ -9,8 +9,7 @@ logger = logging.getLogger('TESTING')
 
 class TestCRUD(unittest.TestCase):
     def test_create(self):
-        author = Author(name='John', surname='Doe')
-        author.save()
+        author = Author(name='John', surname='Doe').save()
         self.assertEqual(author.name, 'John')
         self.assertEqual(author.surname, 'Doe')
         

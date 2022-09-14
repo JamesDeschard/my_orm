@@ -189,6 +189,18 @@ print(list(course_1.students.all()))
 # QuerySets
 
 A `QuerySet` object is returned by the manager (base manager or relation manager) `all()` methods.
+For example:
+
+```` python
+Author(name='John', surname='Doe').save()
+Author(name='Jane', surname='Doe').save()
+Author(name='James', surname='Deschard').save()
+print(type(author.objects.all()))
+print(list(author.objects.all()))
+# Will return:
+# <class 'orm.queryset.QuerySet'>
+# [<Author: [id=1, name=John, surname=Doe]>, <Author: [id=2, name=Jane, surname=Doe]>, <Author: [id=3, name=James, surname=Deschard]>]
+```
 
 ## Evaluating a QuerySet
 
