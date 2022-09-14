@@ -2,12 +2,16 @@ import copy
 import inspect
 
 from .db_connections import ExecuteQuery
+from .sql_queries import ModelManagerQueries
 from .utils import get_relation_classes_without_relation_fields, relations
 
 RELATIONS = relations()
 
 
 class QuerySetSearch:
+    """
+    This class is a wrapper for the QuerySet class. It is used to filter the queryset.
+    """
     def __init__(self, cached_result) -> None:
         self.cached_result = cached_result
         
@@ -24,10 +28,10 @@ class QuerySetSearch:
         return self
         
     def filter(self, **kwargs):
-        return self.filter_or_exclude('=', **kwargs)
+        return self.filter_or_exclude(operator='=', **kwargs)
     
     def exclude(self, **kwargs):
-        return self.filter_or_exclude('!=', **kwargs)
+        return self.filter_or_exclude(operator='!=', **kwargs)
         
     def first(self):
         self.cached_result = f' {self.cached_result} LIMIT 1'
@@ -42,28 +46,39 @@ class QuerySetSearch:
     
     
 class FieldRelationManager:    
+    """
+    This class manages many to many relations for the model.
+    It is accessible from the model attribute which has a many to many field.
+    """
     def __init__(self, id, r_1, r_2, r_tree) -> None:
-        self.r_1_id = id
-        self.r_1 = r_1
-        self.r_2 = r_2
+        self.id = id
+        self.table_1 = r_1.lower()
+        self.table_2 = r_2.lower()
         
-        self.relation_class = r_tree.get(self.r_2)
-        self.table_name = f'{self.r_1.lower()}_{self.r_2.lower()}'
-    
-    def insertion_query(self, obj):
-        return f""" INSERT INTO {self.table_name} ({self.r_1.lower()}_id, {self.r_2.lower()}_id) 
-                    VALUES ({obj.id}, {self.r_1_id});"""
+        self.relation_class = r_tree.get(r_2)
+        self.junction_table = f'{self.table_1}_{self.table_2}'
     
     def add(self, *args):
-        return list(map(lambda q: ExecuteQuery(self.insertion_query(q)).execute(), args))
+        for obj in args:
+            query = ModelManagerQueries().field_manager_add(
+                self.junction_table,
+                self.table_1,
+                self.table_2, 
+                obj.id, 
+                self.id
+            )
+            ExecuteQuery(query).execute()
 
     def all(self):
-        relationship_rows = f', {self.r_1.lower()}.'.join(self.relation_class.fields.keys())
-        
-        query = f"""SELECT {self.r_1.lower()}.{relationship_rows} 
-                    FROM {self.table_name}
-                    INNER JOIN {self.r_1.lower()} ON {self.r_1.lower()}.id = {self.table_name}.{self.r_1.lower()}_id
-                    WHERE {self.table_name}.{self.r_2.lower()}_id = {self.r_1_id};"""    
+        rows = f', {self.table_1}.'.join(self.relation_class.fields.keys())
+        query = ModelManagerQueries().field_manager_all(
+            self.junction_table, 
+            self.table_1, 
+            self.table_2, 
+            self.id, 
+            rows
+        )  
+                      
         return QuerySet(query, self.relation_class).build()
 
     def create(self, **kwargs):
@@ -74,31 +89,43 @@ class FieldRelationManager:
 
 
 class NoFieldRelationManager:
+    """
+    This class manages many to many relations for the model.
+    It is accessible from the model attribute which does not have a many to many field.
+    """
     def __init__(self, model_class, id) -> None:
         self.r_1 = model_class
-        self.r_2 = self.get_relations()
-        self.id = id
-        self.table_name = f'{self.r_1.__name__.lower()}_{self.r_2.__name__.lower()}'
+        self.r_2 = self.get_relation()
         
-    def get_relations(self):
+        self.table_1 = self.r_1.__name__.lower()
+        self.table_2 = self.r_2.__name__.lower()
+        self.id = id
+        self.junction_table = f'{self.table_1}_{self.table_2}'
+        
+    def get_relation(self):
         for relations in self.r_1.relation_tree.values():
-            for relation in relations.values():
-                if inspect.isclass(relation) and relation != self.r_1:
-                    return relation
+            relation = [r for r in relations.values() if inspect.isclass(r) and r != self.r_1]
+            return relation[0] if relation else None
  
     def all(self):
-        relationship_rows = f', {self.r_2.__name__.lower()}.'.join(list(self.r_2.fields.keys())[:-1])
-        
-        query = f"""SELECT {self.r_2.__name__.lower()}.{relationship_rows} 
-                    FROM {self.table_name}
-                    INNER JOIN {self.r_2.__name__.lower()} ON {self.r_2.__name__.lower()}.id = {self.table_name}.{self.r_2.__name__.lower()}_id
-                    WHERE {self.table_name}.{self.r_1.__name__.lower()}_id = {self.id};"""
-        
+        rows = f', {self.table_2}.'.join(list(self.r_2.fields.keys())[:-1])
+        query = ModelManagerQueries().no_field_manager_get_all(
+            self.table_1, 
+            self.table_2, 
+            self.junction_table, 
+            self.id, 
+            rows
+        )        
         return QuerySet(query, self.r_2).build()   
     
     
 class QuerySet(QuerySetSearch):  
-
+    """
+    This method is used to hit the database and get the result.
+    The result is returned in the form of a QuerySet object.
+    The database is hit lazily meaning that the database is hit only
+    when the __iter__ method is called or a filter method is called.
+    """
     def __init__(self, query, model_class) -> None:
         super().__init__(cached_result=str())
         self.query = query
@@ -180,17 +207,18 @@ class QuerySet(QuerySetSearch):
                 elif self.model_class in relation_classes_without_relation_fields: 
                     
                     obj_attrs[key] = value 
+                    
                     is_many_to_many = next(iter(self.model_class.relation_tree)) == RELATIONS[-1]
                     
                     if not additional_field and is_many_to_many:
+                        
                         relations = self.model_class.relation_tree.get(RELATIONS[-1])
-                        # This third loop never has a length > 2
-                        for _class in list(relations.values())[:-1]:
-                            if _class not in relation_classes_without_relation_fields:
-                                manager_name = _class.__name__.lower() + '_set'
-                                if not additional_field.get(manager_name):
-                                    id = obj_attrs.get('id')
-                                    additional_field[manager_name] = NoFieldRelationManager(self.model_class, id)
+                        relation_model = [r for r in relations.values() if r != self.model_class][0]
+                        manager_name = f'{relation_model.__name__}_set'.lower()
+                        
+                        if not additional_field.get(manager_name):
+                            id = obj_attrs.get('id')
+                            additional_field[manager_name] = NoFieldRelationManager(self.model_class, id)
                     
                 else:
                     obj_attrs[key] = value
@@ -199,5 +227,7 @@ class QuerySet(QuerySetSearch):
                 obj_attrs = {**obj_attrs, **additional_field}
                 
             self.queryset.append(self.model_class(**obj_attrs))
+    
+    
                     
             

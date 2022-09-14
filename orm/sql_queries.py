@@ -1,33 +1,5 @@
 from settings import DB_SETTINGS
 
-
-class DbStatusQueriesPostgres:
-    def table_exists_query(self, table_name):
-        return f""" SELECT EXISTS (SELECT table_name FROM information_schema.tables 
-                    WHERE table_name = '{table_name}'); """
-    
-    def get_all_tables_query(self):
-        return """ SELECT table_name FROM information_schema.tables
-                                WHERE table_schema = 'public'; """
-    
-    def get_table_columns_query(self, table_name):
-        return f""" SELECT column_name FROM information_schema.columns
-                    WHERE table_name = '{table_name}'; """
-
-
-class DbStatusQueriesSqlite:
-    def table_exists_query(self, table_name):
-        return f""" SELECT name FROM sqlite_schema WHERE type='table' AND name='{table_name}'; """
-    
-    def get_all_tables_query(self):
-        return """ SELECT name FROM sqlite_schema WHERE type='table'; """
-    
-    def get_table_columns_query(self, table_name):
-        return f""" PRAGMA table_info({table_name})"""
-    
-    def get_table_column_detail_query(self, table_name, column_name):
-        return f""" SELECT * from {table_name} WHERE {column_name} = ?; """
-
     
 class MigrationQueries:
     def engine_type_var(self, engine, option_1, option_2):
@@ -82,3 +54,45 @@ class ModelManagerQueries:
     
     def get_all_columns(self, table_name):
         return f"SELECT * FROM {table_name}"
+    
+    def no_field_manager_get_all(self, table_1, table_2, junction_table, id, rows):
+        return f""" SELECT {table_2}.{rows} 
+                    FROM {junction_table}
+                    INNER JOIN {table_2} ON {table_2}.id = {junction_table}.{table_2}_id
+                    WHERE {junction_table}.{table_1}_id = {id};"""
+    
+    def field_manager_add(self, junction_table, table_1, table_2, id_1, id_2):
+        return f""" INSERT INTO {junction_table} ({table_1}_id, {table_2}_id) 
+                    VALUES ({id_1}, {id_2});"""
+    
+    def field_manager_all(self, junction_table, table_1, table_2, id, rows):
+        return f""" SELECT {table_1}.{rows} 
+                    FROM {junction_table}
+                    INNER JOIN {table_1} ON {table_1}.id = {junction_table}.{table_1}_id
+                    WHERE {junction_table}.{table_2}_id = {id};""" 
+
+
+class DbStatusQueriesPostgres:
+    def table_exists_query(self, table_name):
+        return f""" SELECT EXISTS (SELECT table_name FROM information_schema.tables 
+                    WHERE table_name = '{table_name}'); """
+    
+    def get_all_tables_query(self):
+        return """ SELECT table_name FROM information_schema.tables
+                                WHERE table_schema = 'public'; """
+    
+    def get_table_columns_query(self, table_name):
+        return f""" SELECT column_name FROM information_schema.columns
+                    WHERE table_name = '{table_name}'; """
+
+
+class DbStatusQueriesSqlite:
+    def table_exists_query(self, table_name):
+        return f""" SELECT name FROM sqlite_schema WHERE type='table' AND name='{table_name}'; """
+    
+    def get_all_tables_query(self):
+        return """ SELECT name FROM sqlite_schema WHERE type='table'; """
+    
+    def get_table_columns_query(self, table_name):
+        return f""" PRAGMA table_info({table_name})"""
+            

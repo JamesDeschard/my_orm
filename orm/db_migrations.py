@@ -19,6 +19,9 @@ QUERY_SEPARATOR = '\n##############\n'
 
 
 class MakeMigration:
+    """
+    This class is a utility class that will be used to create the queries listed in the migration file.
+    """
     def __init__(self, table_name, fields, action_type) -> None:
         self.table_name = table_name
         self.fields = fields
@@ -51,8 +54,6 @@ class MakeMigration:
         
         return query
         
-        
-    
     def update_table(self, table_name, column, action_type):
         if action_type == 'add':
             new_column_name, new_column_definition = next(iter(column.items()))
@@ -62,6 +63,10 @@ class MakeMigration:
             return MigrationQueries().remove_column(table_name, column)
 
 class PopulateMigrationFile:
+    """
+    This class checks for the existence of the migration file and creates it if it doesn't exist.
+    It also checks for any changes made in the user models files and creates the queries for the changes.
+    """
     current_db_tables = get_db_tables()
     current_file_classes = get_current_models()
     query = str()
@@ -127,6 +132,9 @@ class PopulateMigrationFile:
 
 
 class ExecuteMigrations:
+    """
+    This class executes the migrations listed in the migration file.
+    """
     
     def __init__(self) -> None:
         if not os.path.isdir(os.path.join(BASE_DIR, 'migrations')):

@@ -9,6 +9,10 @@ from .utils import get_relation_classes_without_relation_fields
 
 
 class BaseManager:  
+    """
+    This class establishes the manager for every model class.
+    It is responsible for creating, updating, deleting and retrieving data from the database.
+    """
     def __init__(self, model_class) -> None:
         self.model_class = model_class
     
@@ -28,18 +32,18 @@ class BaseManager:
                 if field_value.blank:
                     fields[field_name] = ''
 
+        linked_classes = get_relation_classes_without_relation_fields()
         for field_name, field_value in copy.copy(fields).items(): 
-            if field_name not in self.get_model_class_field_names():
-                if self.model_class not in get_relation_classes_without_relation_fields():
-                    raise Exception(f'Field {field_name} does not exist in {self.model_class.__name__}')
+            if field_name not in self.get_model_class_field_names() and self.model_class not in linked_classes:
+                raise Exception(f'Field {field_name} does not exist in {self.model_class.__name__}')
                
             if isinstance(field_value, BaseModel):
                 fields[field_name] = field_value.id
             
-            if isinstance(field_value, FieldRelationManager):
+            elif isinstance(field_value, FieldRelationManager):
                 fields.pop(field_name)
             
-            if isinstance(field_value, NoFieldRelationManager):
+            elif isinstance(field_value, NoFieldRelationManager):
                 fields.pop(field_name)
 
         return True
@@ -76,7 +80,16 @@ class BaseManager:
         return QuerySet(query, self.model_class).build()  
 
 
-class MetaModel(type):     
+class MetaModel(type):  
+    """
+    This meta class is responsible for creating the model class.
+    It collects the attribute names and values from child model 
+    classes inheriting from BaseModel and puts them in a dictionnary.
+    
+    It also sets the table name, the fields dictionary and the relation tree.
+    
+    The relation tree is a dictionnary linking two classes having a relation.
+    """   
     def __new__(cls, name, bases, attrs):
         new_class = super().__new__(cls, name, bases, attrs)
         
@@ -128,6 +141,11 @@ class MetaModel(type):
     
 
 class BaseModel(metaclass=MetaModel):  
+    """
+    The base model class is used to create model classes.
+    It is the parent class of all model classes.
+    It has shortcut methods to create, update, delete and retrieve data from the database.
+    """
     def __init__(self, **kwargs) -> None:
         for key, value in kwargs.items():
             setattr(self, key, value)

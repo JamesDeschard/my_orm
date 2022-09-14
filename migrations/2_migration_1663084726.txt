@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS student_course ;
+##############
+ALTER TABLE course ADD COLUMN students <orm.model_fields.ManyToManyField object at 0x00000123EF241B80>;
+##############

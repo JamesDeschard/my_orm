@@ -7,6 +7,9 @@ logger = logging.getLogger('CONNECT')
 
 
 class DBConnectionMixin:
+    """
+    This class is used to create a connection to the database.
+    """
     def __init__(self, db_info) -> None:
         self.db_engine = __import__(db_info.get('db_engine'))
         self.db_settings = db_info.get('db_settings')
@@ -34,6 +37,9 @@ class DBConnectionMixin:
 
 
 class ExecuteQuery(DBConnectionMixin):
+    """
+    A utility mixin to execute queries to the db.
+    """
     def __init__(self, query) -> None:
         super().__init__(DB_SETTINGS)
         self.query = query
