@@ -31,6 +31,10 @@ Once you have defined your models, you need to tell the ORM you’re going to us
 You must also specify your database settings in the `DB_SETTINGS` variable. If you connect using SQLite the database will be automatically created on your first migration.
 Run `python manage.py migrate` to generate the SQL and create your database.
 
+## Modify your models
+
+TO DO.
+
 ## Fields
 
 ### Fields
