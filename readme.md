@@ -127,7 +127,7 @@ passport_3 = Passport(owner=passport_owner_1, number='98483094830').save()
 # sqlite3.IntegrityError: UNIQUE constraint failed: passport.owner
 ```
 
-### ManyToOne (ForeignKey) (1toN)
+### ManyToOne 
 
 To define a many-to-one relationship, use the `ForeignKey` field:
 
@@ -161,7 +161,7 @@ for i in range(5):
 ```
 
 
-### ManyToManyField(NtoN)
+### ManyToManyField
 
 To define a many-to-many relationship, use `ManyToManyField`.
 
