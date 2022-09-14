@@ -38,13 +38,7 @@ class TestCRUD(unittest.TestCase):
 class TestRelations(unittest.TestCase):
     def test_one_to_one(self):
         passport_owner_1 = PassPortOwner(name='Bob').save()
-        passport_owner_2 = PassPortOwner(name='John').save()
-        
         passport_1 = Passport(owner=passport_owner_1, number='123456789').save()
-        passport_2 = Passport(owner=passport_owner_2, number='987654321').save()
-        print(passport_1.owner.name)
-        print(passport_2.owner.name)
-        passport_3 = Passport(owner=passport_owner_1, number='98483094830').save()
         self.assertEqual(passport_1.owner.name, passport_owner_1.name)  
         # Making a second passport will call a UNIQUE constraint violation
         
@@ -95,14 +89,11 @@ class TestRelations(unittest.TestCase):
         course_1.students.add(student_1, student_2, student_3)
         course_2.students.add(student_1)
     
-        
         # Should return all courses for student 1
         student_1_courses = list(student_1.course_set.all())
 
-        self.assertEqual(list(student_1_courses)[1].title, 'C#')
-        
+        self.assertEqual(list(student_1_courses)[1].title, 'C#')  
         self.assertEqual(list(course_1.students.all())[2].name, 'Charles')
-        print([s.name for s in course_1.students.all()])
         self.assertEqual(list(course_2.students.all())[0].name, 'David')
         
         # Create a student and add to a course 

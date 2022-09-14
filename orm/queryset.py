@@ -156,9 +156,7 @@ class QuerySet(QuerySetSearch):
             related_model = self.model_class.relation_tree.get(relation)
             if related_model:
                 field_name = related_model.get('field_name')
-               
                 related_model = {f: c for f, c in list(related_model.items())[:1] if c != self.model_class}
-                
                 if field_name and related_model:                  
                     foreign_key_field, foreign_key_model = next(iter(related_model.items()))
                     return field_name, foreign_key_field, foreign_key_model

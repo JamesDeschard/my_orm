@@ -5,7 +5,7 @@ import inspect
 from .db_connections import ExecuteQuery
 from .queryset import NoFieldRelationManager, QuerySet, FieldRelationManager
 from .sql_queries import ModelManagerQueries
-from .utils import get_relation_classes_without_relation_fields
+from .utils import get_relation_classes_without_relation_fields, relations
 
 
 class BaseManager:  
@@ -103,19 +103,18 @@ class MetaModel(type):
         
         # Create the fields dictionary and the relation tree between attributes
         
-        relations = ['ForeignKey', 'OneToOneField', 'ManyToManyField']
         field_list, relation_tree = dict(), dict()
-        
+        r = relations()
         for key, value in attrs.items():
             if not key.startswith('__') and not callable(value):
                 field_list[key] = value
-            if value.__class__.__name__ in relations:
-                new_relation = dict()
-                relation_type = relations[relations.index(value.__class__.__name__)]
-                new_relation[name] = value.model_reference
-                new_relation[value.model_reference.__name__] = new_class
-                new_relation['field_name'] = key
-                relation_tree[relation_type] = new_relation
+            if value.__class__.__name__ in r:
+                new_r = dict()
+                relation_type = r[r.index(value.__class__.__name__)]
+                new_r[name] = value.model_reference
+                new_r[value.model_reference.__name__] = new_class
+                new_r['field_name'] = key
+                relation_tree[relation_type] = new_r
                 
         if field_list:
             new_class.fields = {**{'id': None}, **field_list}
