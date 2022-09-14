@@ -213,7 +213,7 @@ be evaluated by:
 
 ## QuerySet methods
 
-Currently you can use:
+A ``QuerySet`` method returns another ``QuerySet`` object even if ``len(queryset) == 1 is True``. Currently you can use:
 
 ### filter()
 
