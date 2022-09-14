@@ -46,13 +46,13 @@ This little project currently supports:
 
 ### Field Options
 
-- blank
+- **blank**
 If `True`, Django will store empty values as NULL in the database. Default is False.
-- null
+- **null**
 If `True`, the field is allowed to be blank. Default is False.
-- default
+- **default**
 The default value for the field. This can be a value or a callable object. If callable it will be called every time a new object is created.
-- unique
+- **unique**
 If `True`, this field must be unique throughout the table.
 
 
