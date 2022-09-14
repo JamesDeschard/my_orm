@@ -5,7 +5,7 @@
 ``` python
 from orm.orm_base_model import BaseModel
 
-Create your models here.
+# Create your models here.
 
 class Author(BaseModel):
     name = BaseModel.CharField(max_length=255)
