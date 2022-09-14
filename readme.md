@@ -2,6 +2,8 @@
 
 ## Quick example:
 
+Create a file called `models.py` or any other suitable name. Like so:
+
 ``` python
 from orm.orm_base_model import BaseModel
 
