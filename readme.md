@@ -1,5 +1,7 @@
 # How does it work? Building a small custom ORM
 
+This little project is a shy attempt to built an ORM with a similar syntax to that of Django's built in ORM. 
+
 ## Quick example:
 
 Create a file called `models.py` or any other suitable name. Like so:
