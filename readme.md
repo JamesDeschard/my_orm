@@ -123,7 +123,7 @@ author = Author(name='John', surname='Doe').save()
 for i in range(5):
     book = Book(title=f'Test_{i}', author=author)
     book.save()
-    print(book.name)
+    print(book.author.name, book.name)
 
 # Will return:
 # John Test_0
