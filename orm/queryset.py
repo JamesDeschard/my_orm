@@ -182,11 +182,11 @@ class QuerySet(QuerySetSearch):
         if not query:
             return
         
-        self.queryset = list()
+        self.queryset = list()                                                                                 # Reset the queryset 
 
         for i, q in copy.copy(enumerate(query)):
-            if len(self.model_class.fields.keys()) != len(query[i]):
-                query[i] = q  + (RELATIONS[-1],)
+            if len(self.model_class.fields.keys()) != len(query[i]):                                           # If the query result is a ManyToManyField, add the field which was deleted by the
+                query[i] = q  + (RELATIONS[-1],)                                                               # BaseModel.certify_field_compatibility method.                                              
                 
             obj_attrs = dict()
             additional_field = dict()
@@ -196,38 +196,40 @@ class QuerySet(QuerySetSearch):
             for key, value in zip(self.model_class.fields.keys(), query[i]):
                     
                 if foreign_key_field and key == field_name:
-                    if value == RELATIONS[-1]:
-                        r_tree = self.model_class.relation_tree.get(RELATIONS[-1])
-                        id = obj_attrs.get('id')
-                        r_2, r_1 = list(r_tree.keys())[:-1]
-                        obj_attrs[key] = FieldRelationManager(id, r_1, r_2, r_tree)
-                    else:
-                        obj_attrs[key] = foreign_key_model.objects.get(id=value)  
+                    if value == RELATIONS[-1]:                                                                  # Many To Many Relation
+                        obj_attrs[key] = self.set_n_to_n_relation_manager(obj_attrs)
+                    else:                                                                                       # One To One or Foreign Key Relation
+                        obj_attrs[key] = foreign_key_model.objects.get(id=value)                                
                         
-                elif self.model_class in relation_classes_without_relation_fields: 
+                elif self.model_class in relation_classes_without_relation_fields:                              # Relation without a field
                     
                     obj_attrs[key] = value 
                     
-                    is_many_to_many = next(iter(self.model_class.relation_tree)) == RELATIONS[-1]
-                    
-                    if not additional_field and is_many_to_many:
-                        
-                        relations = self.model_class.relation_tree.get(RELATIONS[-1])
-                        relation_model = [r for r in relations.values() if r != self.model_class][0]
-                        manager_name = f'{relation_model.__name__}_set'.lower()
-                        
-                        if not additional_field.get(manager_name):
-                            id = obj_attrs.get('id')
-                            additional_field[manager_name] = NoFieldRelationManager(self.model_class, id)
-                    
+                    if next(iter(self.model_class.relation_tree)) == RELATIONS[-1]:                             # Many To Many Relation                                           
+                        additional_field.update(
+                            self.set_n_to_n_relation_manager_for_attr_without_field(obj_attrs))
+                      
                 else:
-                    obj_attrs[key] = value
+                    obj_attrs[key] = value                                                                      # Normal Field
                     
             if additional_field:
-                obj_attrs = {**obj_attrs, **additional_field}
-                
+                obj_attrs = {**obj_attrs, **additional_field}       # If no field is present in the relation make sure to add it to the object attributes. 
+                                                                    # Must be set at the end.
             self.queryset.append(self.model_class(**obj_attrs))
     
+    
+    def set_n_to_n_relation_manager(self, obj_attrs):
+        r_tree = self.model_class.relation_tree.get(RELATIONS[-1])
+        id = obj_attrs.get('id')
+        r_2, r_1 = list(r_tree.keys())[:-1]
+        return FieldRelationManager(id, r_1, r_2, r_tree)
+    
+    def set_n_to_n_relation_manager_for_attr_without_field(self, obj_attrs):                                                           
+        relations = self.model_class.relation_tree.get(RELATIONS[-1])
+        relation_model = [r for r in relations.values() if r != self.model_class][0]
+        manager_name = f'{relation_model.__name__}_set'.lower()
+        id = obj_attrs.get('id')
+        return {manager_name: NoFieldRelationManager(self.model_class, id)}
     
                     
             

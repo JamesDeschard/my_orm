@@ -81,23 +81,24 @@ def get_relation_classes_without_relation_fields():
     """
 
     related_classes = set()
-    relations_fields = set()
-    
-    models = get_current_models()
+    relation_fields = set()
     related_models = list()
+    models = get_current_models()
+
+    
     for _class in models.values():
         if has_relationship(_class):
             relation = next(iter(_class.relation_tree))
             r_m = _class.relation_tree.get(relation)
-            relations_fields.add(copy.copy(r_m).popitem()[1])
-            related_models.append(list(r_m.values()))
+            relation_fields.add(copy.copy(r_m).popitem()[1])
+            related_models.append(r_m.values())
 
     related_models = set(itertools.chain.from_iterable(related_models))
     
     for model in related_models:
         if inspect.isclass(model):
-            difference = relations_fields - set(model.fields.keys())
-            if difference == relations_fields:
+            difference = relation_fields - set(model.fields.keys())
+            if difference == relation_fields:
                 related_classes.add(model)
             
     return related_classes

@@ -16,7 +16,7 @@ class TestQuerySets(unittest.TestCase):
                 i.delete()
 
         for i in range(10):
-            author = Author(
+            Author(
                 name=get_random_name(random.randrange(3, 10)), 
                 surname=get_random_name(random.randrange(3, 10))
             ).save()

@@ -1,5 +1,4 @@
 import logging
-from sqlite3 import TimeFromTicks
 import unittest
 
 from .test_models import *
@@ -8,26 +7,19 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger('TESTING')
 
 
-def create_author():
-    author = Author(name='John', surname='Doe')
-    author.save()
-
-
 class TestCRUD(unittest.TestCase):
     def test_create(self):
-        create_author()
-        author = Author.objects.get(name='John', surname='Doe')
+        author = Author(name='John', surname='Doe')
+        author.save()
         self.assertEqual(author.name, 'John')
         self.assertEqual(author.surname, 'Doe')
 
     def test_delete(self):
         author = Author.objects.get(name='John').delete()
-        author = Author.objects.get(name='John')
         self.assertEqual(author, None)
         
     def test_update(self):
-        create_author()
-        author = Author.objects.get(name='John')
+        author = Author(name='John', surname='Doe').save()
         author.update(name='Jane')
         author = Author.objects.get(name='Jane')
         self.assertEqual(author.name, 'Jane')
@@ -48,10 +40,8 @@ class TestRelations(unittest.TestCase):
         # Making a second passport will call a UNIQUE constraint violation
         
     def test_foreign_key(self):
-        create_author()
-        author = Author.objects.get(name='John', surname='Doe')
+        author = Author(name='John', surname='Doe').save()
         book = Book(title='Test', author=author).save()
-        book = Book.objects.get(title='Test')
         self.assertEqual(book.author.name, 'John')
         author.delete()
         
@@ -60,8 +50,7 @@ class TestRelations(unittest.TestCase):
         self.assertEqual(book, None)
         self.assertEqual(author, None)
         
-        create_author()
-        author = Author.objects.get(name='John')
+        author = Author(name='John', surname='Doe').save()
 
         for i in range(5):
             book = Book(title=f'Test_{i}', author=author)

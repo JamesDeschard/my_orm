@@ -50,7 +50,7 @@ class ExecuteQuery(DBConnectionMixin):
             
             if DB_SETTINGS.get('db_engine') == 'sqlite3':
                 self.cursor.execute("PRAGMA foreign_keys = 1")           
-                
+
             self.cursor.execute(self.query)
             self.connection.commit()
             

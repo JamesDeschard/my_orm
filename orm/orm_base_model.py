@@ -62,6 +62,8 @@ class BaseManager:
                 )
                 ExecuteQuery(query).execute()
                 
+        return self.get(**kwargs)
+                
     def get(self, **kwargs): 
         if self.certify_field_compatibility(kwargs):
             query = ModelManagerQueries().get(self.get_table_name(), **kwargs)
@@ -70,6 +72,7 @@ class BaseManager:
     def update(self, **kwargs):
         if self.certify_field_compatibility(kwargs):
             ExecuteQuery(ModelManagerQueries().update(self.get_table_name(), **kwargs)).execute()
+        return self.get(**kwargs)
   
     def delete(self, **kwargs):
         self.certify_field_compatibility(kwargs)
@@ -96,6 +99,7 @@ class MetaModel(type):
         # Set the future database table name
         
         new_class.table_name = name.lower()
+        new_class.id = None
         
         # Create the fields dictionary and the relation tree between attributes
         
@@ -155,12 +159,12 @@ class BaseModel(metaclass=MetaModel):
         return f"<{self.__class__.__name__}: [{attrs_format}]>"
     
     def save(self) -> None:
-        self.objects.create(**self.__dict__)
+        return self.objects.create(**self.__dict__)
       
     def delete(self) -> None:
-        self.objects.delete(**self.__dict__)
+        return self.objects.delete(**self.__dict__)
 
     def update(self, **kwargs) -> None:
         update_data = self.__dict__ if not kwargs else {**{'id': self.id} , **kwargs}
-        self.objects.update(**update_data)
+        return self.objects.update(**update_data)
         
