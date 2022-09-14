@@ -44,7 +44,7 @@ class TestRelations(unittest.TestCase):
         passport_2 = Passport(owner=passport_owner_2, number='987654321').save()
         print(passport_1.owner.name)
         print(passport_2.owner.name)
-        
+        passport_3 = Passport(owner=passport_owner_1, number='98483094830').save()
         self.assertEqual(passport_1.owner.name, passport_owner_1.name)  
         # Making a second passport will call a UNIQUE constraint violation
         

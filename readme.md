@@ -91,6 +91,14 @@ print(passport_2.owner.name)
 # Bob
 # John
 ```
+Adding another passport to a user who already had one will raise a ``UNIQUE constraint failed `` error.
+
+``` python
+passport_3 = Passport(owner=passport_owner_1, number='98483094830').save()
+
+# Will return:
+# sqlite3.IntegrityError: UNIQUE constraint failed: passport.owner
+```
 
 ### ManyToOne (ForeignKey) (1toN)
 
