@@ -197,6 +197,7 @@ Author(name='Jane', surname='Doe').save()
 Author(name='James', surname='Deschard').save()
 print(type(author.objects.all()))
 print(list(author.objects.all()))
+
 # Will return:
 # <class 'orm.queryset.QuerySet'>
 # [<Author: [id=1, name=John, surname=Doe]>, <Author: [id=2, name=Jane, surname=Doe]>, <Author: [id=3, name=James, surname=Deschard]>]
@@ -221,7 +222,7 @@ Returns a new QuerySet containing objects that match the given lookup parameters
 Parameters must match with the model.
 
 
-### exclude()¶
+### exclude()
 ``exclude(*args, **kwargs)``
 Returns a new QuerySet containing objects that do not match the given lookup parameters.
 Parameters must match with the model.
